@@ -6,7 +6,7 @@ module counter (
     output reg [3:0] p1,
     p2
 );
-//01
+//010000
   reg [13:0] cnt_first, cnt_second;
 
   always @(posedge clk, negedge rst_n) begin
