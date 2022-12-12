@@ -8,15 +8,15 @@ module pre (
     input clk,
     input next,
     output isOn,
-    output reg[7:0] light,
+    output wire[7:0] light,
     output reg[3:0] ena //最高位是符号
 );
   reg[3:0] l;
   reg [27:0] t;
   reg [3:0] n1, n2, n3, n0; 
   reg [3:0] sc;
-  wire ok;
-  assign ok= ~(p1|p2|p3|sign);
+  
+  assign ok= ~(p1|p2|p3|sign)&(n0!=10);
   reg [1:0]st;
 
   num_to_signal signal(l,light);
@@ -41,7 +41,7 @@ module pre (
         else n1 <= 0;
       end
       if (sign) begin
-        if (n0 != 4'd10) n0 <= 4'd10;
+        if (n0 != 4'd10) n0 <= 4'd10; //10代表符号
         else n0 <= 0;
       end
     end else t <= t + 1;
@@ -54,8 +54,8 @@ module pre (
     if(st==0)begin
     case(sc)
     2'b00: begin ena=4'b0001; l=n1; end
-    2'b01: begin ena=4'b0010; l=n2;end
-    2'b10: begin ena=4'b0100; l=n3;end
+    2'b01: begin ena=4'b0010; l=n2; end
+    2'b10: begin ena=4'b0100; l=n3; end
     2'b11: begin ena=4'b1000; l=n0; end
   endcase
      end
