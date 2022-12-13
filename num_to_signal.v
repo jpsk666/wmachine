@@ -1,5 +1,5 @@
 `timescale 1ns / 1ps
-module num_to_signal (
+module num_to_signal (//最高位绑A位
     input [3:0] num,
     output reg [7:0] seg_out
 );

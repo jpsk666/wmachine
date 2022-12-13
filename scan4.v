@@ -30,7 +30,7 @@ module scan4 (
   always @(posedge clk_2) begin
     scan <= scan + 1;
   end
-  always @(scan) begin
+  always @(*) begin
     case (scan)
       2'b00: begin //最右边灯亮
         ena = 4'h01;

@@ -5,14 +5,14 @@ module pre (
     p2,
     p3,
     sign,
-    input ri_bt,//右按键
+    input ri_bt,//右按键,选模式
     input clk,
-    input bt,//确定按钮
-    output isOn,//按下按钮能否进入洗衣阶段
+    input bt,//确定按钮,进入下一状态
+    // output isOn,//按下按钮能否进入洗衣阶段
     output wire [7:0] light,//灯信号
-    output reg [3:0] ena,  //4个灯使能信号
-    output reg [9:0] bal,//余额，最大999
-    output reg [1:0] mode//模式
+    output [3:0] ena//4个灯使能信号
+    // output reg [9:0] bal,//余额，最大999
+    // output reg [1:0] mode//模式
 );
   reg [27:0] t;  //0.66秒计数
   reg [3:0] n1, n2, n3, n0; //1~3 个位至百位,0:符号位
@@ -24,10 +24,8 @@ module pre (
   reg [1:0] st;
 
   scan4(clk,n1,n2,n3,n0,ena,light);//没写完
-
+  
   always @(posedge clk) begin
-    sc <= sc + 1; 
-    //扫描不会停
     case (st)  //状态判断
       2'b0:
       if (t >= 66000000) begin
@@ -49,26 +47,26 @@ module pre (
           else n0 <= 0;
         end
       end else t <= t + 1;
-
-      2'b01: if(t== 75000000)begin
-      t<=0;
-      end else t <=t+1;
-    endcase
+      2'b01:{n2,n3,n0}<={o,o,o};
+  endcase;
+  end
+  always @(posedge ri_bt) begin
+    if(ri_bt)begin
+      n1<= n1+1;
+    end
   end
 
   always @(posedge bt) begin //按钮控制状态迁移
+    if(bt) begin
     case (st)
       2'b0:
       if (next1) begin
         st <= st + 1;
-        bal <=100*n3 + 10*n2 +n1; 
-      end else begin
-        {n1,n2,n3}={o,o,o};
+        // bal <=100*n3 + 10*n2 +n1; 
+      end else 
         st <= st;
-      end
-      
-
     endcase
+    end
   end
 endmodule
 
