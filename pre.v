@@ -55,9 +55,10 @@ module pre (
       end
     endcase
   end
-  always @(posedge clk, posedge rst) begin
-    if (rst) begin
+  always @(posedge clk, negedge rst) begin
+    if (!rst) begin
       st <= 1'b0;
+      {n1,n2,n3,n0}={o,o,o,o};
     end else begin
       case (st)  //状态判断
         2'b0: begin
@@ -80,11 +81,11 @@ module pre (
               else n0 <= 0;
             end else n0 <= n0;
           end else t <= t + 1;
-          if (m_pos) begin
+          if (m_pos) begin//如果按按钮就判断是否下一阶段
             if (next1) begin
               st <= 2'b01;
               n1 <= 0;  //可行，转化状态时直接赋值0
-            end else st <= 1'b0;
+            end else begin st <= 1'b0;{n0,n1,n2,n3}={o,o,o,o}; end
           end else st <= 1'b0;
         end
         2'b01: begin
