@@ -9,7 +9,7 @@ module scan4 (
     output reg [3:0] ena,  //使能信号
     output [7:0] light  //显像
 );
-  reg clk_2;
+  reg clk_2;//降频后时钟
   reg [1:0] scan = 0;
   parameter x = 200000;
   reg [17:0] cnt = 0;
@@ -50,10 +50,4 @@ module scan4 (
       end
     endcase
   end
-
-
-
-
-
-
 endmodule
