@@ -79,7 +79,7 @@ always @(posedge clk, negedge rst) begin
                     end
                 end
                 2'b01: begin
-                    if (n0<=3) st <= st + 1;
+                    if (n0<=2) st <= st + 1;
                 end
                 2'b10: begin
                     if (t >= 100000000) begin
