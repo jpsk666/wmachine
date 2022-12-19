@@ -2,18 +2,15 @@
 
 module pre (
     input on, //使能
-    input p1,  //4个拨码开关，从右到左
-    p2,
-    p3,
-    sign,
+    input p1,p2,p3,sign,//4个拨码开关，从右到左
     input ri_bt,  //右按键,选模式
     input clk,
     input rst,
     (* DONT_TOUCH = "1" *) input bt,  //确定按钮,进入下一状态
 
     // output isOn,//按下按钮能否进入洗衣阶段
-    output wire [7:0] light,  //灯信号
-    output [3:0] ena,  //4个灯使能信号
+    output wire [7:0] light,  //数码管信号
+    output [3:0] ena,  //数码管使能信号
     // output reg [9:0] bal,//余额，最大999
     // output reg [1:0] mode//模式 //有4个
     output reg [2:0] st_light //接灯
