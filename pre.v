@@ -40,16 +40,16 @@ module pre (
       light
   ); 
 
-  always @(*) begin
+  always @(*) begin//小灯
     case (st)
       2'b00: begin
         st_light = 3'b001;
       end
       2'b01: begin
-        st_light = 3'b010;
+        st_light = 3'b011;
       end
       2'b10: begin
-        st_light = 3'b100;
+        st_light = 3'b111;
       end
       default: begin
         st_light = 3'b0;
@@ -62,7 +62,8 @@ module pre (
     if (!rst) begin
       st <= 1'b0;
       {n1,n2,n3,n0}={o,o,o,o};
-    end else begin
+    end 
+    else begin
       if(on) begin
       case (st)  //状态判断
         2'b0: begin
