@@ -1,11 +1,11 @@
 `timescale 1ns / 1ps
 
 module wash (
-    input on, clk,rst
+    input on, clk,rst,
     output wire [7:0] light,  //数码管信号
     output [3:0] ena,  //数码管使能信号
     output reg [7:0] st_light //接灯
-    )
+    );
 parameter o = 1'b0;//显示0
 parameter n = 4'd11;//熄灯
 reg [26:0]t;//计时1秒
@@ -60,7 +60,7 @@ always @(posedge clk, negedge rst) begin
                     end
                     else begin
                         n3 <= n3;
-                        n0 <= n0
+                        n0 <= n0;
                     end
                 end
             end 
