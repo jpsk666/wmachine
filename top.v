@@ -13,7 +13,7 @@ module top (
   reg isFine;//是否罚款
   reg [8:0] dy_price,s_price,m_price,b_price;//甩干,小中大模式价格
   reg o_price; //是否按默认价格收费
-  wire [9:0] bal; //目前用户余额，接输出
+  reg [9:0] bal; //目前用户余额，接输出
 
 
 
