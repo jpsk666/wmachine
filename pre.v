@@ -1,5 +1,5 @@
 `timescale 1ns / 1ps
-
+//test
 module pre (
     input on,  //使能
     input p1,
