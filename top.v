@@ -9,6 +9,8 @@ module top (
     output reg [3:0] r_light,l_light, //左右两组灯的显像
     output reg [7:0]led
 
+
+
 );
   reg [2:0] mode;
   reg isFine;//是否罚款
