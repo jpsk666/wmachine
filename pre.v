@@ -84,6 +84,8 @@ module pre (
     endcase
   end
 
+
+
   always @(posedge clk, negedge rst) begin
 
     if (!rst) begin
