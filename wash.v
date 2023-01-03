@@ -2,7 +2,7 @@
 
 module wash (
     input on, clk,rst,
-    input [1:0] mode,
+    // input [1:0] mode,
     (* DONT_TOUCH = "1" *) input bt,
     output wire [7:0] light,  //数码管信号
     output [3:0] ena,  //数码管使能信号
@@ -10,9 +10,11 @@ module wash (
     );
 parameter o = 1'b0;//显示0
 parameter n = 4'd11;//熄灯
+reg [1:0]mode=2'b01;
 reg [26:0]t;//计时1秒
 reg [26:0]tnow=0;//当前时间
 reg [26:0]tcur=0;//当前状态持续时间
+reg [26:0]tt=0;
 reg [3:0] n1=o;//数码管初始化
 reg [3:0] n2=n;
 reg [3:0] n3=4'd9;
@@ -61,6 +63,7 @@ always @(posedge clk, negedge rst) begin
             if (t >= 100000000) begin //降频到1秒
                 t <= 0;
                 tnow<=tnow+1;
+                tt<=tt+1;
                 tcur<=tcur+1;
                 if (n3 != 4'd0) begin
                     n0 <= n0;
@@ -81,16 +84,30 @@ always @(posedge clk, negedge rst) begin
                 t <= t + 1;
             end
 
-            if(st==3'b111)begin
+            if(tpst==2'b00)begin
                 if(m_pos)begin
-                    if(mode==2'b00)begin//甩干
-                        tcur<=0;
-                        tpst<=2'b11;//直接进入脱水阶段
-                    end
-                    else begin
-                        tcur<=0;
-                        tpst<=2'b00;//进入正常洗衣阶段
-                    end
+                    case(mode)
+                        2'b00:begin//甩干
+                            tcur<=0;
+                            tpst<=2'b11;//直接进入脱水阶段
+                        end
+                        2'b01:begin//小
+                            tcur<=0;
+                            tpst<=2'b01;
+                        end
+                        2'b10:begin//中
+                            tcur<=0;
+                            tpst<=2'b01;
+                        end
+                        2'b11:begin//大
+                            tcur<=0;
+                            tpst<=2'b01;
+                        end
+                        default:begin
+                            tcur<=0;
+                            tpst<=2'b01;//进入正常洗衣阶段
+                        end
+                    endcase
                 end
                 else begin
                     st<=3'b111;
@@ -98,25 +115,74 @@ always @(posedge clk, negedge rst) begin
             end
             else begin
                 case (tpst)
-                    2'b00: begin//setup
-                        if(tcur<=10)begin
-                            
+                    2'b01: begin//main washing
+                        if(tcur<=20)begin
+                            if(tt>=2)begin
+                                tt<=0;
+                                n1<=4'd1;
+                            end
+                            else begin
+                                n1<=4'd2;
+                            end
                         end
                         else begin
-                        
+                            tt<=0;
+                            tcur<=0;
+                            tpst<=2'b10;
                         end
                     end
-                    2'b01: begin//main washing
-                        st_light = 8'b00001000;
-                    end
                     2'b10: begin//rinsing
-                        st_light = 8'b00010000;
+                        if(tcur<=20)begin
+                            if(tt>=4)begin
+                                tt<=0;
+                                n1<=4'd3;
+                            end
+                            else if(tt>=2) begin
+                                n1<=4'd1;
+                            end
+                            else if(tt>=0)begin
+                                n1<=4'd4;
+                            end
+                            else begin
+                                tt<=0;
+                                n1<=4'd3;
+                            end
+                        end
+                        else begin
+                            tt<=0;
+                            tcur<=0;
+                            tpst<=2'b11;
+                        end
                     end
                     2'b11: begin//dehydration
-                        st_light = 8'b00100000;
+                        if(tnow<=99)begin
+                            if(tt>=6)begin
+                                tt<=0;
+                                n1<=4'd5;
+                            end
+                            else if(tt>=4) begin
+                                n1<=4'd4;
+                            end
+                            else if(tt>=2)begin
+                                n1<=4'd6;
+                            end
+                            else if(tt>=0)begin
+                                n1<=4'd4;
+                            end
+                            else begin
+                                tt<=0;
+                                n1<=4'd5;
+                            end
+                        end
+                        else begin
+                            tt<=0;
+                            tcur<=0;
+                            tpst<=2'b11;
+                            n1<=4'd10;
+                        end
                     end
                     default: begin
-                        st_light = 8'b0;
+                        tt<=0;
                     end
                 endcase
             end
