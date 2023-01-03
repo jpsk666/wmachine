@@ -11,7 +11,7 @@ module pre (
     // output isOn,//按下按钮能否进入洗衣阶段
     output wire [7:0] light,  //数码管信号
     output [3:0] ena,  //数码管使能信号
-    // output reg [9:0] bal,//余额，最大999
+    output reg [9:0] bal,//余额，最大999
     // output reg [1:0] mode//模式 //有4个
     output reg [2:0] st_light //接灯
 );
