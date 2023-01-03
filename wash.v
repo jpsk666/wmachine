@@ -56,32 +56,35 @@ always @(*) begin//小灯
 always @(posedge clk, negedge rst) begin
     if (!rst) begin
         st <= 1'b0;
-        {n1,n2,n3,n0}={o,n,4'd9,4'd9};
+        tpst<=2'b00;
+        {n1,n2,n3,n0}={o,n,4'd0,4'd6};
     end 
     else begin
         if(on) begin
-            if (t >= 100000000) begin //降频到1秒
-                t <= 0;
-                tnow<=tnow+1;
-                tt<=tt+1;
-                tcur<=tcur+1;
-                if (n3 != 4'd0) begin
-                    n0 <= n0;
-                    n3 <= n3 - 1;//倒计时100秒
-                end
-                else begin
-                    if(n0!= 4'd0) begin
-                        n3 <= 9;
-                        n0 <= n0 - 1;
+            if(tpst!=2'b00)begin
+                if (t >= 100000000) begin //降频到1秒
+                    t <= 0;
+                    tnow<=tnow+1;
+                    tt<=tt+1;
+                    tcur<=tcur+1;
+                    if (n3 != 4'd0) begin
+                        n0 <= n0;
+                        n3 <= n3 - 1;
                     end
                     else begin
-                        n3 <= n3;
-                        n0 <= n0;
+                        if(n0!= 4'd0) begin
+                            n3 <= 9;
+                            n0 <= n0 - 1;
+                        end
+                        else begin
+                            n3 <= n3;
+                            n0 <= n0;
+                        end
                     end
+                end 
+                else begin 
+                    t <= t + 1;
                 end
-            end 
-            else begin 
-                t <= t + 1;
             end
 
             if(tpst==2'b00)begin
@@ -93,7 +96,7 @@ always @(posedge clk, negedge rst) begin
                         end
                         2'b01:begin//小
                             tcur<=0;
-                            tpst<=2'b01;
+                            tpst<=2'b01;//进入正常洗衣阶段
                         end
                         2'b10:begin//中
                             tcur<=0;
@@ -105,7 +108,7 @@ always @(posedge clk, negedge rst) begin
                         end
                         default:begin
                             tcur<=0;
-                            tpst<=2'b01;//进入正常洗衣阶段
+                            tpst<=2'b01;
                         end
                     endcase
                 end
@@ -117,8 +120,7 @@ always @(posedge clk, negedge rst) begin
                 case (tpst)
                     2'b01: begin//main washing
                         if(tcur<=20)begin
-                            if(tt>=2)begin
-                                tt<=0;
+                            if(tt%2==0)begin
                                 n1<=4'd1;
                             end
                             else begin
@@ -133,14 +135,14 @@ always @(posedge clk, negedge rst) begin
                     end
                     2'b10: begin//rinsing
                         if(tcur<=20)begin
-                            if(tt>=4)begin
+                            if(tt%3==0)begin
                                 tt<=0;
                                 n1<=4'd3;
                             end
-                            else if(tt>=2) begin
+                            else if(tt%3==1) begin
                                 n1<=4'd1;
                             end
-                            else if(tt>=0)begin
+                            else if(tt%3==2)begin
                                 n1<=4'd4;
                             end
                             else begin
@@ -155,18 +157,18 @@ always @(posedge clk, negedge rst) begin
                         end
                     end
                     2'b11: begin//dehydration
-                        if(tnow<=99)begin
-                            if(tt>=6)begin
+                        if(tnow<=60)begin
+                            if(tt%4==0)begin
                                 tt<=0;
                                 n1<=4'd5;
                             end
-                            else if(tt>=4) begin
+                            else if(tt%4==1) begin
                                 n1<=4'd4;
                             end
-                            else if(tt>=2)begin
+                            else if(tt%4==2)begin
                                 n1<=4'd6;
                             end
-                            else if(tt>=0)begin
+                            else if(tt%4==3)begin
                                 n1<=4'd4;
                             end
                             else begin
