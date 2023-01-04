@@ -2,15 +2,15 @@
 
 module wash (
     input on, clk,rst,
-    // input [1:0] mode,
-    (* DONT_TOUCH = "1" *) input bt,
+    input [1:0] mode,
+    (* DONT_TOUCH = "1" *) 
+    input m_pos,
     output wire [7:0] light,  //数码管信号
     output [3:0] ena,  //数码管使能信号
     output reg [7:0] st_light //接灯
     );
 parameter o = 1'b0;//显示0
 parameter n = 4'd11;//熄灯
-reg [1:0]mode=2'b01;
 reg [26:0]t;//计时1秒
 reg [26:0]tnow=0;//当前时间
 reg [26:0]tcur=0;//当前状态持续时间
@@ -21,9 +21,6 @@ reg [3:0] n3=4'd9;
 reg [3:0] n0=4'd9;
 reg [1:0] tpst=1'b0;  //4种状态：机器设定，水洗，冲洗，脱水
 reg [2:0] st = 1'b0;  //6种状态:rotate，stew，addwater，drain，fspin，rspin
-
-wire m_pos;
-  button mid (      clk,      bt,      m_pos  );
 
 scan4 scanner (
       clk,

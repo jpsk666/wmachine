@@ -1,22 +1,20 @@
 `timescale 1ns / 1ps
 module pre (
-    input on,  //使能
-    input p1,
-    p2,
-    p3,
-    sign,  //4个拨码开关，从右到左
-    input m_pos,  //右按键,选模式
-    input clk,
-    input rst,
-    (* DONT_TOUCH = "1" *) input r_pos,  //确定按钮,进入下一状态
-    output reg isOn,  //按下按钮能否进入洗衣阶段
-    output wire [7:0] light,  //数码管信号
-    output [3:0] ena,  //数码管使能信号
-    output wire [7:0] light_l,  //左数码管信号
-    output [3:0] ena_l,  //左数码管使能信号
-    output reg [12:1] bal,  //余额，最大999
-    output reg [1:0] mode,  //模式 //有4个
-    output reg [2:0] st_light  //接左边3小灯表示状态
+  input on,  //使能
+  input p1,p2,p3,sign, //4个拨码开关，从右到左
+  input r_pos,  //右按键,选模式
+  (* DONT_TOUCH = "1" *) 
+  input m_pos,  //确定按钮,进入下一状态
+  input clk,
+  input rst,
+  output reg isOn,  //按下按钮能否进入洗衣阶段
+  output wire [7:0] light,  //数码管信号
+  output [3:0] ena,  //数码管使能信号
+  output wire [7:0] light_l,  //左数码管信号
+  output [3:0] ena_l,  //左数码管使能信号
+  output reg signed [10:0] bal,  //余额，最大999
+  output reg [1:0] mode,  //模式 //有4个
+  output reg [2:0] st_light  //接左边3小灯表示状态
 );
   reg [27:0] t;  //0.66秒计数
   reg [3:0] n1, n2, n3, n0;  //1~3：个位至百位; 0:符号位
