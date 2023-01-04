@@ -3,7 +3,7 @@
 module wash (
     input on, clk,rst,
     input [1:0] mode,
-    (* DONT_TOUCH = "1" *) input m_pos,
+    (* DONT_TOUCH = "1" *) input bt,
     output wire [7:0] led,  //数码管信号
     output [3:0] ena,  //数码管使能信号
     output reg [7:0] st_light, //接灯
@@ -26,6 +26,9 @@ reg [26:0]setseq=20;
 reg [26:0]settot=60;
 reg [7:0]setn3=4'd0;
 reg [7:0]setn0=4'd6;
+
+wire m_pos;
+button bt(clk,bt,m_pos);
 
 scan4 scanner (
       clk,
