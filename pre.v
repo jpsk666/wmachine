@@ -54,30 +54,30 @@ module pre (
   always @(*) begin  //小灯
     case (st)
       2'b00: begin
-        st_light = 3'b001;
-        isOn = 0;
+        st_light <= 3'b001;
+        isOn <= 0;
       end
       2'b01: begin
-        st_light = 3'b010;
-        isOn = 0;
+        st_light <= 3'b010;
+        isOn <= 0;
       end
       2'b10: begin  //状态3
-        st_light = 3'b100;
+        st_light <= 3'b100;
         case (mode)
           2'b01: begin
-            if (n2 == 0) isOn = true;
-            else isOn = 0;
+            if (n2 == 0) isOn <= true;
+            else isOn <= 0;
           end
           2'b10: begin
-            if (n2 != 4'b000x) isOn = 0;
-            else isOn = true;
+            if (n2 != 4'b000x) isOn <= 0;
+            else isOn <= true;
           end
-          default: isOn = true;
+          default: isOn <= true;
         endcase
       end
       default: begin
-        st_light = 3'b0;
-        isOn = 0;
+        st_light <= 3'b0;
+        isOn <= 0;
       end
     endcase
   end
