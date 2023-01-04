@@ -16,6 +16,17 @@ reg [8:0] dy_price,s_price,m_price,b_price;//甩干,小中大模式价格
 reg o_price; //是否按默认价格收费
 wire [9:0] bal; //目前用户余额，接输出
 
+//pre模块的声明
+wire pre_isOn;
+wire [7:0] pre_light,pre_light_l;
+wire [3:0] pre_ena,pre_ena_l;
+wire 
+
+
+
+
+
+
 
 always @(*) begin
   case (state)
