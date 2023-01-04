@@ -92,12 +92,23 @@ always @(posedge clk, negedge rst) begin
         bal<=pre_bal;
         if(pre_isOn==1 && m_pos) begin
           state<=2'b01;
+          billing_on<=0;
         end
       end
       2'b01: begin //wash阶段
-        
+        wash_on<=1;
+        led_l<=wash_led[7:4];
+        led_r<=wash_led[3:0];
+        ena_l<=wash_ena[7:4];
+        ena_r<=wash_ena[3:0];
+        st_light<=wash_st_light;
+        if(m_pos) begin
+          state<=2'b01;
+          wash_on<=0;
+        end
       end
       2'b10: begin //billing阶段
+        billing_on<=1;
         
       end
       default: begin

@@ -52,8 +52,8 @@ always @(*) begin//小灯
   end
 always @(posedge clk, negedge rst) begin
     if (!rst) begin
-        st <= 1'b0;
-        {n1,n2,n3,n0}={o,n,4'd9,4'd9};
+        st <= 1'b00;
+        {n1,n2,n3,n0}<={o,n,4'd9,4'd9};
     end 
     else begin
         if(on) begin
