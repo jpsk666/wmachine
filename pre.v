@@ -70,7 +70,7 @@ module pre (
             else isOn = 0;
           end
           2'b10: begin
-            if (n2 != 3'b000x) isOn = 0;
+            if (n2 != 4'b000x) isOn = 0;
             else isOn = true;
           end
           default: isOn = true;

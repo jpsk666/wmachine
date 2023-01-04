@@ -15,6 +15,7 @@ module top (
   reg o_price; //是否按默认价格收费
   wire [9:0] bal; //目前用户余额，接输出
 
+  
 
 
 
