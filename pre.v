@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps
+
 module pre (
   input on,  //使能
   input p1,p2,p3,sign, //4个拨码开关，从右到左
@@ -8,11 +9,11 @@ module pre (
   input clk,
   input rst,
   output reg isOn,  //按下按钮能否进入洗衣阶段
-  output wire [7:0] light,  //数码管信号
-  output [3:0] ena,  //数码管使能信号
-  output wire [7:0] light_l,  //左数码管信号
+  output wire [7:0] led_r,  //数码管信号
+  output [3:0] ena_r,  //数码管使能信号
+  output wire [7:0] led_l,  //左数码管信号
   output [3:0] ena_l,  //左数码管使能信号
-  output reg signed [10:0] bal,  //余额，最大999
+  output reg signed [11:0] bal,  //余额，最大999
   output reg [1:0] mode,  //模式 //有4个
   output reg [2:0] st_light  //接左边3小灯表示状态
 );
@@ -37,8 +38,8 @@ module pre (
       n2,
       n3,
       n0,
-      ena,
-      light
+      ena_r,
+      led_r
   );
   scan4 scanner2 (
       clk,
@@ -47,7 +48,7 @@ module pre (
       n7,
       n8,
       ena_l,
-      light_l
+      led_l
   );
 
   always @(*) begin  //小灯
@@ -84,7 +85,6 @@ module pre (
 
 
   always @(posedge clk, negedge rst) begin
-
     if (!rst) begin
       st <= 1'b0;
       {n1, n2, n3, n0} <= {o, o, o, o};

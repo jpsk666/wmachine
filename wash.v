@@ -5,7 +5,7 @@ module wash (
     input [1:0] mode,
     (* DONT_TOUCH = "1" *) 
     input m_pos,
-    output wire [7:0] light,  //数码管信号
+    output wire [7:0] led,  //数码管信号
     output [3:0] ena,  //数码管使能信号
     output reg [7:0] st_light //接灯
     );
@@ -29,7 +29,7 @@ scan4 scanner (
       n3,
       n0,
       ena,
-      light
+      led
   ); 
 always @(*) begin//小灯
     case (tpst)
