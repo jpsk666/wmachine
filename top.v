@@ -6,7 +6,7 @@ module top (
   input rst,//复位信号
   input [3:0]sw,//右边4个拨码开关，从左到右
   output reg [3:0] ena_r,ena_l,  //左右两组数码管的使能
-  output reg [3:0] led_r,led_l, //左右数码管的显像
+  output reg [7:0] led_r,led_l, //数码管的显像
   output reg [7:0] st_light //下方8个状态灯
 );
 reg [1:0] state;
@@ -52,6 +52,7 @@ wire [7:0] wash_led;
 [3:0] wash_ena;
 reg [7:0] wash_st_light;
 reg [7:0] wash_wt_light;
+reg wash_next;
 wash wash(
   wash_on, clk, rst,
   mode,
@@ -59,7 +60,8 @@ wash wash(
   wash_led,
   wash_ena,
   wash_st_light,
-  wash_wt_light
+  wash_wt_light,
+  wash_next
 );
 
 //billing模块的例化
@@ -67,22 +69,48 @@ reg billing_on;
 wire [7:0] billing_led;
 [3:0] billing_ena;
 reg [7:0] billing_st_light;
+reg billing_next;
 billing billing(
   billing_on,
   clk,rst,
-  bal,
+  bal,mode,
   billing_led,
   billing_ena,
-  billing_st_light
+  billing_st_light,
+  billing_next
 );
 
 always @(posedge clk, negedge rst) begin
   if (!rst) begin
-    
+    pre_on<=0;
+    wash_on<=0;
+    billing_on<=0;
+    st_light<=8'b00000000;
+    bal<=12'b000000000000;
+    mode<=2'b00;
+    led_l<=8'b00000000;
+    led_r<=8'b00000000;
+    ena_l<=4'b0000;
+    ena_r<=4'b0000;
   end
   else begin
     case (state)
-      2'b00: begin //pre阶段
+      2'b00; begin //待机阶段
+        pre_on<=0;
+        wash_on<=0;
+        billing_on<=0;
+        st_light<=8'b00000000;
+        bal<=12'b000000000000;
+        mode<=2'b00;
+        led_l<=8'b00000000;
+        led_r<=8'b00000000;
+        ena_l<=4'b0000;
+        ena_r<=4'b0000;
+        if(m_pos) begin
+          state<=2'b10;
+        end
+      end
+      2'b01: begin //pre阶段
         pre_on<=1;
         led_l<=pre_led_l;
         led_r<=pre_led_r;
@@ -91,26 +119,34 @@ always @(posedge clk, negedge rst) begin
         mode<=pre_mode;
         st_light[2:0]<=pre_st_light;
         bal<=pre_bal;
-        if(pre_isOn==1 && m_pos) begin
-          state<=2'b01;
-          billing_on<=0;
+        if(m_pos && pre_isOn==1) begin
+          state<=2'b10;
+          pre_on<=0;
         end
       end
-      2'b01: begin //wash阶段
+      2'b10: begin //wash阶段
         wash_on<=1;
-        led_l<=wash_led[7:4];
-        led_r<=wash_led[3:0];
-        ena_l<=wash_ena[7:4];
-        ena_r<=wash_ena[3:0];
+        led_r<=wash_led;
+        ena_r<=wash_ena;
+        led_l<=8'b00000000;
+        ena_l<=4'b0000;
         st_light<=wash_st_light;
-        if(m_pos) begin
-          state<=2'b01;
+        if(m_pos && wash_next) begin
+          state<=2'b11;
           wash_on<=0;
         end
       end
-      2'b10: begin //billing阶段
+      2'b11: begin //billing阶段
         billing_on<=1;
-        
+        led_r<=billing_led;
+        ena_r<=billing_ena;
+        led_l<=8'b00000000;
+        ena_l<=4'b0000;
+        st_light<=billing_st_light;
+        if(m_pos && wash_next) begin
+          state<=2'b00;
+          billing_on<=0;
+        end
       end
       default: begin
         pre_on<=0;
@@ -121,9 +157,4 @@ always @(posedge clk, negedge rst) begin
     endcase
   end
 end
-
-  
-
-
-
 endmodule
