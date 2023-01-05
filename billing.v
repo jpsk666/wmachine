@@ -11,6 +11,7 @@ module billing (
     output wire [7:0] led,  //数码管信号
     output [3:0] ena,  //数码管使能信号
     output reg [7:0] st_light //接灯
+    output reg next;
     );
 parameter o = 4'd0;//显示0
 parameter n = 4'd11;//熄灯
