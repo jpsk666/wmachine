@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module wash (
+module billing (
     input on, clk,rst,
     input signed [11:0] bal,
     output wire [7:0] led,  //数码管信号
