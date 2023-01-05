@@ -145,8 +145,8 @@ module subtraction(
     if(sign==4'd10)begin
       sig=4'd10;
       q={1'b0,numbin}+{1'b0,subbin};
-      if(q[9]!=1'b0)begin
-        resbin=10'b1111111111;
+      if(q[10]!=1'b0)begin
+        resbin=10'b1111100111;
       end
       else begin
         resbin=numbin+subbin;
