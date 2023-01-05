@@ -51,14 +51,15 @@ reg wash_on;
 wire [7:0] wash_led;
 [3:0] wash_ena;
 reg [7:0] wash_st_light;
+reg [7:0] wash_wt_light;
 wash wash(
-  wash_on,
-  clk,rst,
+  wash_on, clk, rst,
   mode,
   m_pos,
   wash_led,
   wash_ena,
-  wash_st_light
+  wash_st_light,
+  wash_wt_light
 );
 
 //billing模块的例化
