@@ -7,7 +7,8 @@ module wash (
     output wire [7:0] led,  //数码管信号
     output [3:0] ena,  //数码管使能信号
     output reg [7:0] st_light, //接灯
-    output reg [7:0] wt_light//水灯
+    output reg [7:0] wt_light,//水灯
+    output reg nxt
     );
 parameter o = 1'b0;//显示0
 parameter n = 4'd11;//熄灯
@@ -28,7 +29,7 @@ reg [7:0]setn3=4'd0;
 reg [7:0]setn0=4'd6;
 
 wire m_pos;
-button bt(clk,bt,m_pos);
+button but(clk,bt,m_pos);
 
 scan4 scanner (
       clk,
@@ -133,6 +134,7 @@ always @(posedge clk, negedge rst) begin
         tnow<=0;
         tt<=0;
         t<=0;
+        nxt<=0;
         {n1,n2}<={o,n};
         n3<=setn3;
         n0<=setn0;
@@ -276,6 +278,7 @@ always @(posedge clk, negedge rst) begin
                             tcur<=0;
                             tpst<=2'b11;
                             n1<=4'd10;
+                            nxt<=1;
                         end
                     end
                     default: begin
