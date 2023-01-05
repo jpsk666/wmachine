@@ -48,46 +48,22 @@ always @(posedge clk, negedge rst) begin
     end 
     else begin
         if(on) begin
-            if(tpst==1'b0)begin
+            if(st==1'b0)begin
                 case(mode)
                     2'b00:begin//甩干
-                        settot<=15;
-                        setn0<=4'd1;
-                        setn3<=4'd5;
-                        tcur<=0;
-                        tpst<=2'b11;//直接进入脱水阶段
+                        
                     end
                     2'b01:begin//小
-                        settot<=30;
-                        setn0<=4'd3;
-                        setn3<=4'd0;
-                        setseq<=10;
-                        tcur<=0;
-                        tpst<=2'b01;//进入正常洗衣阶段
+                        
                     end
                     2'b10:begin//中
-                        settot<=45;
-                        setn0<=4'd4;
-                        setn3<=4'd5;
-                        setseq<=15;
-                        tcur<=0;
-                        tpst<=2'b01;
+                        
                     end
                     2'b11:begin//大
-                        settot<=60;
-                        setn0<=4'd6;
-                        setn3<=4'd0;
-                        setseq<=20;
-                        tcur<=0;
-                        tpst<=2'b01;
+                        
                     end
                     default:begin
-                        settot<=60;
-                        setn0<=4'd6;
-                        setn3<=4'd0;
-                        setseq<=20;
-                        tcur<=0;
-                        tpst<=2'b01;
+                        
                     end
                 endcase
             end
