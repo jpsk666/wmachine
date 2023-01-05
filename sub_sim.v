@@ -6,6 +6,7 @@ module sub_sim;
     reg     [11:0]      bcd;
     reg     [11:0]      sub={4'd0,4'd9,4'd9};
     wire [15:0] res;
+    // wire [9:0] checkbin;
 
  subtraction u(
     .sign(sign),.num(bcd),.sub(sub),.res(res)
