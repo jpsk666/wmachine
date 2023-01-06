@@ -11,7 +11,7 @@ module billing (
     input [11:0] set2,//中
     input [11:0] set3,//大
     input [11:0]setfine,//空转罚款
-    output wire [7:0] led,  //数码管信号
+    output wire [7:0] led, //数码管信号
     output [3:0] ena,  //数码管使能信号
     output reg [7:0] st_light, //接灯
     output reg [7:0] wt_light//水灯
