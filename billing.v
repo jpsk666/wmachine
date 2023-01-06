@@ -2,8 +2,8 @@
 
 module billing (
     input on, clk,rst,
-    input [11:0] bal,
     (* DONT_TOUCH = "1" *) input bt,
+    input [11:0] bal,
     input [1:0] mode,
     input [11:0] set0,//传入甩干价格
     input [11:0] set1,//小
@@ -14,7 +14,7 @@ module billing (
     output [3:0] ena,  //数码管使能信号
     output reg [7:0] st_light, //接灯
     output reg [7:0] wt_light,//水灯
-    output wire buzzer,
+    output wire buzzer
     output reg next
     );
 // reg [11:0]bal={4'd1,4'd9,4'd6};
@@ -53,6 +53,7 @@ reg [3:0] nowsign=4'd0;
 reg [11:0] num;
 reg [11:0] sub; 
 wire[15:0] res;
+reg [15:0] nowb;
 subtraction sb(nowsign,num,sub,res);
 
 reg [26:0] countdown=8;
@@ -137,6 +138,7 @@ always @(posedge clk, negedge rst) begin
                     end
                 endcase
                 if(t>=100000000)begin
+                    countdown<=countdown-1;
                     flag<=!flag;
                     t<=0;
                 end
@@ -149,29 +151,27 @@ always @(posedge clk, negedge rst) begin
                 else begin
                     {n0,n3,n2,n1}<={4'd10,setini};
                 end
+                if(countdown<=0)begin
+                    countdown<=0;
+                    t<=0;
+                    nowsign<=4'd0;
+                    num<=bal;
+                    sub<=setfine;
+                    st<=3'b010;
+                end
                 if(m_pos)begin
                     buzzena<=0;
                     t<=0;
                     countdown<=8;
+                    nowb<={4'd0,bal};
                     st<=3'b001;
                 end
             end
             else if(st==3'b001)begin
                 buzzena<=0;
-                if(countdown<=0)begin
-                    countdown<=0;
-                    st<=3'b010;
-                end
-                if(t>=100000000)begin
-                    countdown<=countdown-1;
-                    t<=0;
-                end
-                else begin
-                    t<=t+1;
-                end
                 if(flag==0)begin
-                    nowsign<=4'd0;
-                    num<=bal;
+                    nowsign<=nowb[15:12];
+                    num<=nowb[11:0];
                     sub<=setini;
                     flag<=1;
                 end
@@ -200,7 +200,8 @@ always @(posedge clk, negedge rst) begin
                 if(m_pos)begin
                     tt<=0;
                     t<=0;
-                    st<=3'b011;
+                    nowb<=res;
+                    st<=3'b001;
                 end
             end
             else begin
