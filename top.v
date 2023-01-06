@@ -9,6 +9,7 @@ module top (
   output reg [3:0] ena_r,ena_l,  //两组数码管的使能
   output reg [7:0] st_light, //8个状态灯
   output reg [7:0] wt_light //8个水量灯
+  output reg buzzer;
 );
 reg [1:0] state; //三大状态
 reg [2:0] mode;
@@ -72,6 +73,7 @@ wire [7:0] billing_led;
 wire [3:0] billing_ena;
 reg [7:0] billing_st_light;
 reg [7:0] billing_wt_light;
+wire billing_buzzer;
 reg billing_next;
 billing billing(
   billing_on,clk,rst,
@@ -82,6 +84,7 @@ billing billing(
   billing_ena,
   billing_st_light,
   billing_wt_light,
+  billing_buzzer,
   billing_next
 );
 
@@ -149,6 +152,7 @@ always @(posedge clk, negedge rst) begin
         ena_l<=4'b0000;
         st_light<=billing_st_light;
         wt_light<=billing_wt_light;
+        buzzer<=billing_buzzer;
         if(m_pos && wash_next) begin
           state<=2'b00;
           billing_on<=0;
