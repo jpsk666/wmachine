@@ -17,6 +17,7 @@ module num_to_signal (//最高位绑A位
       4'h9: seg_out = 8'b1110_0110;  //9
       4'ha: seg_out = 8'b0000_0010;  //负号
       4'hb: seg_out = 8'b0000_0000;  //灭
+      4'hc: seg_out = 8'b0001_1010; //c 表示close
       default: seg_out = 8'b0000_0000;
     endcase
 endmodule
