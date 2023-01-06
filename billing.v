@@ -3,6 +3,8 @@
 module billing (
     input on, clk,rst,
     (* DONT_TOUCH = "1" *) input bt,
+    input u_bt,
+    input d_bt,
     input [11:0] bal,
     input [1:0] mode,
     input [11:0] set0,//传入甩干价格
@@ -10,20 +12,20 @@ module billing (
     input [11:0] set2,//中
     input [11:0] set3,//大
     input [11:0]setfine,//空转罚款
-    output wire [7:0] led,  //数码管信号
-    output [3:0] ena,  //数码管使能信号
+    output wire [7:0] led_r,  //数码管信号
+    output [3:0] ena_r,  //数码管使能信号
     output reg [7:0] st_light, //接灯
     output reg [7:0] wt_light,//水灯
-    output wire buzzer
+    output wire buzzer,
     output reg next
     );
-// reg [11:0]bal={4'd1,4'd9,4'd6};
-// reg [1:0]mode=2'b01;
-// reg [11:0]set0={4'd0,4'd2,4'd3};
-// reg [11:0]set1={4'd0,4'd4,4'd5};
-// reg [11:0]set2={4'd0,4'd6,4'd7};
-// reg [11:0]set3={4'd0,4'd8,4'd9};
-// reg [11:0]setfine={4'd0,4'd2,4'd8};
+reg [11:0]bal={4'd1,4'd9,4'd6};
+reg [1:0]mode=2'b01;
+reg [11:0]set0={4'd0,4'd2,4'd3};
+reg [11:0]set1={4'd0,4'd4,4'd5};
+reg [11:0]set2={4'd0,4'd6,4'd7};
+reg [11:0]set3={4'd0,4'd8,4'd9};
+reg [11:0]setfine={4'd0,4'd2,4'd8};
 parameter o = 4'd0;//显示0
 parameter n = 4'd11;//熄灯
 reg [26:0]t;//计时1秒
@@ -38,6 +40,9 @@ reg [11:0]setini={n,n,n};
 reg [26:0]flag=0;
 wire m_pos;
 button but(clk,bt,m_pos);
+wire u_pos,d_pos;
+button ub(clk,u_bt,u_pos);
+button db(clk,d_bt,d_pos);
 
 scan4 scanner (
       clk,
@@ -45,8 +50,8 @@ scan4 scanner (
       n2,
       n3,
       n0,
-      ena,
-      led
+      ena_r,
+      led_r
   ); 
 
 reg [3:0] nowsign=4'd0;
@@ -102,8 +107,8 @@ always @(*) begin//状态灯
     endcase
 end
 
-reg buzzena=0;
-buzz bz(clk,rst,buzzena,buzzer);
+reg buzzena_r=0;
+buzz bz(clk,rst,buzzena_r,buzzer);
 
 always @(posedge clk, negedge rst) begin
     if (!rst) begin
@@ -113,13 +118,13 @@ always @(posedge clk, negedge rst) begin
         t<=0;
         tt<=0;
         countdown<=8;
-        buzzena<=0;
+        buzzena_r<=0;
         {n0,n3,n2,n1}<={4'd10,setini};
     end 
     else begin
         if(on) begin
             if(st==3'b000)begin
-                buzzena<=1;
+                buzzena_r<=1;
                 case(mode)
                     2'b00:begin//甩干
                         setini<=set0;
@@ -159,8 +164,8 @@ always @(posedge clk, negedge rst) begin
                     sub<=setfine;
                     st<=3'b010;
                 end
-                if(m_pos)begin
-                    buzzena<=0;
+                if(u_pos)begin
+                    buzzena_r<=0;
                     t<=0;
                     countdown<=8;
                     nowb<={4'd0,bal};
@@ -168,7 +173,7 @@ always @(posedge clk, negedge rst) begin
                 end
             end
             else if(st==3'b001)begin
-                buzzena<=0;
+                buzzena_r<=0;
                 if(flag==0)begin
                     nowsign<=nowb[15:12];
                     num<=nowb[11:0];
@@ -179,7 +184,7 @@ always @(posedge clk, negedge rst) begin
                     {n0,n3,n2,n1}<=res;
                     flag<=0;
                 end
-                if(m_pos)begin
+                if(d_pos)begin
                     tt<=0;
                     t<=0;
                     st<=3'b011;
@@ -197,7 +202,7 @@ always @(posedge clk, negedge rst) begin
                     {n0,n3,n2,n1}<=res;
                     t<=t+1;
                 end
-                if(m_pos)begin
+                if(u_pos)begin
                     tt<=0;
                     t<=0;
                     nowb<=res;
