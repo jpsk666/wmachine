@@ -2,34 +2,42 @@
 
 module billing (
     input on, clk,rst,
-    (* DONT_TOUCH = "1" *)
-    input m_pos,u_pos,d_pos,
     input [11:0] bal,
+    (* DONT_TOUCH = "1" *) input bt,
     input [1:0] mode,
     input [11:0] set0,//传入甩干价格
     input [11:0] set1,//小
     input [11:0] set2,//中
     input [11:0] set3,//大
     input [11:0]setfine,//空转罚款
-    output wire [7:0] led, //数码管信号
+    output wire [7:0] led,  //数码管信号
     output [3:0] ena,  //数码管使能信号
     output reg [7:0] st_light, //接灯
-    output reg [7:0] wt_light//水灯
+    output reg [7:0] wt_light,//水灯
+    output wire buzzer,
     output reg next
     );
-
+// reg [11:0]bal={4'd1,4'd9,4'd6};
+// reg [1:0]mode=2'b01;
+// reg [11:0]set0={4'd0,4'd2,4'd3};
+// reg [11:0]set1={4'd0,4'd4,4'd5};
+// reg [11:0]set2={4'd0,4'd6,4'd7};
+// reg [11:0]set3={4'd0,4'd8,4'd9};
+// reg [11:0]setfine={4'd0,4'd2,4'd8};
 parameter o = 4'd0;//显示0
 parameter n = 4'd11;//熄灯
 reg [26:0]t;//计时1秒
 reg [26:0]tt;//计时1秒
-reg [1:0] st = 0;  //等待收款，确认收费（等待取衣），收取空转费
 reg [3:0] n1=o;//数码管初始化
 reg [3:0] n2=n;
 reg [3:0] n3=4'd9;
 reg [3:0] n0=4'd9;
+reg [2:0] st = 0;  //等待收款，确认收费（等待取衣），收取空转费
 reg [11:0]setini={n,n,n};
-reg [26:0]flag=0;
 
+reg [26:0]flag=0;
+wire m_pos;
+button but(clk,bt,m_pos);
 
 scan4 scanner (
       clk,
@@ -49,7 +57,7 @@ subtraction sb(nowsign,num,sub,res);
 
 reg [26:0] countdown=8;
 
-always @(*) begin//状态灯
+always @(*) begin
     if(countdown>=8)begin
         wt_light<=8'b11111111;
     end
@@ -81,10 +89,10 @@ end
 
 always @(*) begin//状态灯
     case (st)
-      2'b00: begin
+      3'b000: begin
         st_light <= 8'b01000000;
       end
-      2'b01: begin
+      3'b001: begin
         st_light <= 8'b10000000;
       end
       default: begin
@@ -93,19 +101,24 @@ always @(*) begin//状态灯
     endcase
 end
 
+reg buzzena=0;
+buzz bz(clk,rst,buzzena,buzzer);
+
 always @(posedge clk, negedge rst) begin
     if (!rst) begin
-        st <= 2'b00;
+        st <= 1'b0;
         nowsign<=4'd0;
         flag<=0;
         t<=0;
         tt<=0;
         countdown<=8;
+        buzzena<=0;
         {n0,n3,n2,n1}<={4'd10,setini};
     end 
     else begin
         if(on) begin
-            if(st==2'b00)begin
+            if(st==3'b000)begin
+                buzzena<=1;
                 case(mode)
                     2'b00:begin//甩干
                         setini<=set0;
@@ -137,15 +150,17 @@ always @(posedge clk, negedge rst) begin
                     {n0,n3,n2,n1}<={4'd10,setini};
                 end
                 if(m_pos)begin
+                    buzzena<=0;
                     t<=0;
                     countdown<=8;
-                    st<=2'b01;
+                    st<=3'b001;
                 end
             end
-            else if(st==2'b01)begin
+            else if(st==3'b001)begin
+                buzzena<=0;
                 if(countdown<=0)begin
                     countdown<=0;
-                    st<=2'b10;
+                    st<=3'b010;
                 end
                 if(t>=100000000)begin
                     countdown<=countdown-1;
@@ -164,13 +179,13 @@ always @(posedge clk, negedge rst) begin
                     {n0,n3,n2,n1}<=res;
                     flag<=0;
                 end
-                if(u_pos)begin
+                if(m_pos)begin
                     tt<=0;
                     t<=0;
-                    st<=2'b11;
+                    st<=3'b011;
                 end
             end
-            else if(st==2'b10) begin
+            else if(st==3'b010) begin
                 countdown<=0;
                 if(t>=100000000)begin
                     nowsign<=res[15:12];
@@ -182,10 +197,10 @@ always @(posedge clk, negedge rst) begin
                     {n0,n3,n2,n1}<=res;
                     t<=t+1;
                 end
-                if(u_pos)begin
+                if(m_pos)begin
                     tt<=0;
                     t<=0;
-                    st<=2'b11;
+                    st<=3'b011;
                 end
             end
             else begin
@@ -208,7 +223,6 @@ always @(posedge clk, negedge rst) begin
                 else begin
                     {n0,n3,n2,n1}<={n,n,n,4'd8};
                 end
-                if(d_pos) next<=1;
             end
         end
     end
