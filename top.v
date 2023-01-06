@@ -127,7 +127,7 @@ always @(posedge clk, negedge rst) begin
         mode<=pre_mode;
         st_light[2:0]<=pre_st_light;
         bal<=pre_bal;
-        if(m_pos && pre_isOn==1) begin
+        if(m_pos && pre_isOn) begin
           state<=2'b10;
           pre_on<=0;
         end
@@ -153,7 +153,7 @@ always @(posedge clk, negedge rst) begin
         st_light<=billing_st_light;
         wt_light<=billing_wt_light;
         buzzer<=billing_buzzer;
-        if(m_pos && wash_next) begin
+        if(m_pos && billing_next) begin
           state<=2'b00;
           billing_on<=0;
         end
