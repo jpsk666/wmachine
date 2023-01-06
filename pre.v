@@ -6,6 +6,7 @@ module pre (
   input bt_r,  //右按键,选模式
   (* DONT_TOUCH = "1" *) 
   input bt,  //确定按钮,进入下一状态
+  input bt_u,bt_d,
   input clk,
   input rst,
   output reg isOn,  //按下按钮能否进入洗衣阶段
@@ -30,9 +31,11 @@ assign next1 = ~(p1 | p2 | p3 | sign) & (n0 != 10);
 //四个开关一个都不能上拨，且第一位不能是负数，才能下一阶段
 reg [1:0] st = 1'b0;  //3种状态
 
-wire m_pos,r_pos;
+wire m_pos,r_pos,u_pos,d_pos;
 button bt(clk,bt,m_pos);
 button bt_r(clk,bt_r,r_pos);
+button bt_u(clk,bt_u,u_pos);
+button bt_d(clk,bt_d,d_pos);
 
 scan4 scanner (
     clk,
@@ -55,30 +58,32 @@ scan4 scanner2 (
 
 always @(*) begin  //小灯
   case (st)
-    2'b00: begin
+    2'b00: begin //输入余额
       st_light <= 3'b001;
       isOn <= 0;
     end
-    2'b01: begin
+    2'b01: begin //选择模式
       st_light <= 3'b010;
       isOn <= 0;
     end
-    2'b10: begin  //状态3
+    2'b10: begin //输入重量
       st_light <= 3'b100;
       case (mode)
         2'b01: begin
-          if (n2 == 0) isOn <= true;
+          if (n2 == 0 && d_pos) isOn <= 1;
           else isOn <= 0;
         end
         2'b10: begin
-          if (n2 != 4'b000x) isOn <= 0;
-          else isOn <= true;
+          if (n2 == 4'b000x && d_pos) isOn <= 1;
+          else isOn <= 0;
         end
-        default: isOn <= true;
+        default: begin
+          if(d_pos) isOn <= 1;
+        end
       endcase
     end
     default: begin
-      st_light <= 3'b0;
+      st_light <= 3'b000;
       isOn <= 0;
     end
   endcase
@@ -94,7 +99,7 @@ always @(posedge clk, negedge rst) begin
   end else begin
     if (on) begin
       case (st)  //状态判断
-        2'b0: begin
+        2'b00: begin
           {n5, n6, n7, n8} <= {off, off, off, off};
           if (t >= 66000000) begin
             t <= 0;
@@ -122,7 +127,8 @@ always @(posedge clk, negedge rst) begin
               n1 <= 0;  //可行，转化状态时直接赋值0
               {bal[4:1], bal[8:5], bal[12:9]} <= {n1, n2, n3};
               //可以这么做？
-            end else begin
+            end 
+            else begin
               st <= 1'b0;
               {n0, n1, n2, n3} <= {o, o, o, o};
             end
@@ -137,7 +143,7 @@ always @(posedge clk, negedge rst) begin
             else n1 <= 0;
           else n1 <= n1;
 
-          if (m_pos) begin
+          if (u_pos) begin //开盖，进入下一状态
             st <= 2'b10;
             mode <= n1[1:0];//确定模式
             n8 <= n1;//放在最左侧显示
@@ -156,16 +162,33 @@ always @(posedge clk, negedge rst) begin
               else n1 <= 0;
             end
           end
-          // if(m_pos)begin
-          //   if(~isOn)
-          //   case (mode)
-          //   2'b00:
-
-          //   2'b01:
-
-          //   endcase
-
-          // end
+          //确认输入
+          if(m_pos)begin
+            if(~isOn) begin
+              case (mode)
+              2'b00:begin //甩干
+                if(n1 + n2*10<=) begin 
+                  isOn<=1;
+                end
+              end
+              2'b01:begin //小
+                if(n1 + n2*10<=) begin 
+                  isOn<=1;
+                end
+              end
+              2'b10:begin //中
+                if(n1 + n2*10<=) begin 
+                  isOn<=1;
+                end
+              end
+              2'b11:begin //大
+                if(n1 + n2*10<=) begin 
+                  isOn<=1;
+                end
+              end
+              endcase
+            end 
+          end
 
 
         end

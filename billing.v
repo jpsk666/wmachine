@@ -2,6 +2,7 @@
 
 module billing (
     input on, clk,rst,
+    input u_pos,d_pos,
     input [11:0] bal,
     input [1:0] mode,
     input [11:0] set0,//传入甩干价格
