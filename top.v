@@ -7,15 +7,20 @@ module top (
   input [3:0]sw,//右边4个拨码开关，从左到右
   output reg [3:0] ena_r,ena_l,  //左右两组数码管的使能
   output reg [7:0] led_r,led_l, //数码管的显像
-  output reg [7:0] st_light //下方8个状态灯
+  output reg [7:0] st_light //8个状态灯
+  output reg [7:0] wt_light //8个水量灯
 );
 reg [1:0] state;
 reg [2:0] mode;
 reg signed [11:0] bal; //目前用户余额，接输出
-reg isFine;//是否罚款
-reg [8:0] dy_price,s_price,m_price,b_price;//甩干,小中大模式价格
-reg o_price; //是否按默认价格收费
 
+//甩干,小中大模式价格
+reg [11:0]dy_price={4'd0,4'd2,4'd3};
+reg [11:0]s_price={4'd0,4'd4,4'd5};
+reg [11:0]m_price={4'd0,4'd6,4'd7};
+reg [11:0]b_price={4'd0,4'd8,4'd9};
+reg [11:0]setfine={4'd0,4'd2,4'd8};
+reg o_price; //是否按默认价格收费
 
 //按钮模块（中上下左右）
 wire m_pos,u_pos,l_pos,d_pos,r_pos;
@@ -34,10 +39,9 @@ reg signed [11:0] pre_bal;
 reg [1:0] pre_mode;
 reg [2:0] pre_st_light;
 pre pre(
-  pre_on,
+  pre_on,clk,rst,
   sw[0],sw[1],sw[2],sw[3],
-  r_pos,m_pos,
-  clk,rst,
+  r_pos,m_pos,u_pos,d_pos,
   pre_isOn,
   pre_led_r,pre_ena_r,
   pre_led_l,pre_ena_l,
@@ -69,14 +73,17 @@ reg billing_on;
 wire [7:0] billing_led;
 [3:0] billing_ena;
 reg [7:0] billing_st_light;
+reg [7:0] billing_wt_light;
 reg billing_next;
 billing billing(
-  billing_on,
-  clk,rst,
+  billing_on,clk,rst,
+  m_pos,u_pos,d_pos,
   bal,mode,
+  dy_price,s_price,m_price,b_price,setfine,
   billing_led,
   billing_ena,
   billing_st_light,
+  billing_wt_light,
   billing_next
 );
 
@@ -143,6 +150,7 @@ always @(posedge clk, negedge rst) begin
         led_l<=8'b00000000;
         ena_l<=4'b0000;
         st_light<=billing_st_light;
+        wt_light<=billing_wt_light;
         if(m_pos && wash_next) begin
           state<=2'b00;
           billing_on<=0;

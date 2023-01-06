@@ -1,14 +1,10 @@
 `timescale 1ns / 1ps
 
 module pre (
-  input on,  //使能
+  input on,clk,rst,
   input p1,p2,p3,sign, //4个拨码开关，从右到左
-  input bt_r,  //右按键,选模式
   (* DONT_TOUCH = "1" *) 
-  input bt,  //确定按钮,进入下一状态
-  input bt_u,bt_d,
-  input clk,
-  input rst,
+  input r_pos,m_pos,u_pos,d_pos,//按键
   output reg isOn,  //按下按钮能否进入洗衣阶段
   output wire [7:0] led_r,  //数码管信号
   output [3:0] ena_r,  //数码管使能信号
@@ -88,8 +84,6 @@ always @(*) begin  //小灯
     end
   endcase
 end
-
-
 
 always @(posedge clk, negedge rst) begin
   if (!rst) begin
@@ -189,10 +183,7 @@ always @(posedge clk, negedge rst) begin
               endcase
             end 
           end
-
-
         end
-
       endcase
     end
   end
