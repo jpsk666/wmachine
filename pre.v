@@ -28,7 +28,7 @@ parameter true = 1'b1;
 wire next1;
 assign next1 = ~(p1 | p2 | p3 | sign) & (n0 != 10);
 //四个开关一个都不能上拨，且第一位不能是负数，才能下一阶段
-reg [1:0] st = 1'b0;  //3种状态
+reg [1:0] st = 2'b00;  //3种状态
 button bt1(clk,bt,m_pos);
 button bt2(clk,bt_r,r_pos);
 
