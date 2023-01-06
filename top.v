@@ -33,7 +33,7 @@ button right(clk,r_bt,r_pos);
 reg pre_on;
 reg pre_isOn;
 wire [7:0] pre_led_r,pre_led_l;
-[3:0] pre_ena_r,pre_ena_l;
+wire [3:0] pre_ena_r,pre_ena_l;
 reg signed [11:0] pre_bal;
 reg [1:0] pre_mode;
 reg [2:0] pre_st_light;
@@ -52,7 +52,7 @@ pre pre(
 //wash模块的例化
 reg wash_on;
 wire [7:0] wash_led;
-[3:0] wash_ena;
+wire [3:0] wash_ena;
 reg [7:0] wash_st_light;
 reg [7:0] wash_wt_light;
 reg wash_next;
@@ -70,7 +70,7 @@ wash wash(
 //billing模块的例化
 reg billing_on;
 wire [7:0] billing_led;
-[3:0] billing_ena;
+wire [3:0] billing_ena;
 reg [7:0] billing_st_light;
 reg [7:0] billing_wt_light;
 wire billing_buzzer;
@@ -103,7 +103,7 @@ always @(posedge clk, negedge rst) begin
   end
   else begin
     case (state)
-      2'b00; begin //待机阶段
+      2'b00: begin //待机阶段
         pre_on<=0;
         wash_on<=0;
         billing_on<=0;

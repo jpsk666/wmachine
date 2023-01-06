@@ -15,9 +15,12 @@ module pre (
   output reg [2:0] st_light  //接左边3小灯表示状态
 );
 reg [27:0] t;  //0.66秒计数
-reg [3:0] n1, n2, n3, n0;  //1~3：个位至百位; 0:符号位
-reg [3:0] n5, n6, n7, n8;  //1~3：个位至百位; 0:符号位
 reg [29:0] alarm_t; //2.5s
+reg [3:0] n1, n2, n3, n0;  //1~3：个位至百位; 0:符号位
+reg [3:0] n5, n6, n7, n8;  //5~8 从右到左
+reg open = 0;//盖子是否打开状态
+reg [3:0] lid_state;
+
 
 parameter o = 1'b0;
 parameter off = 4'hb;
@@ -26,12 +29,12 @@ wire next1;
 assign next1 = ~(p1 | p2 | p3 | sign) & (n0 != 10);
 //四个开关一个都不能上拨，且第一位不能是负数，才能下一阶段
 reg [1:0] st = 1'b0;  //3种状态
+button bt1(clk,bt,m_pos);
+button bt2(clk,bt_r,r_pos);
 
-wire m_pos,r_pos,u_pos,d_pos;
-button bt(clk,bt,m_pos);
-button bt_r(clk,bt_r,r_pos);
-button bt_u(clk,bt_u,u_pos);
-button bt_d(clk,bt_d,d_pos);
+button bt3(clk,bt_u,u_pos);
+
+button bt4(clk,bt_d,d_pos);
 
 scan4 scanner (
     clk,
@@ -53,34 +56,36 @@ scan4 scanner2 (
 );
 
 always @(*) begin  //小灯
+  if(open)  lid_state =0 ;
+  else lid_state =4'hc; 
   case (st)
     2'b00: begin //输入余额
-      st_light <= 3'b001;
-      isOn <= 0;
+      st_light = 3'b001;
+      isOn = 0;
     end
     2'b01: begin //选择模式
-      st_light <= 3'b010;
-      isOn <= 0;
+      st_light = 3'b010;
+      isOn = 0;
     end
     2'b10: begin //输入重量
-      st_light <= 3'b100;
+      st_light = 3'b100;
       case (mode)
         2'b01: begin
-          if (n2 == 0 && d_pos) isOn <= 1;
-          else isOn <= 0;
+          if (n2 == 0 && ~open) isOn = true;
+          else isOn = 0;
         end
         2'b10: begin
-          if (n2 == 4'b000x && d_pos) isOn <= 1;
-          else isOn <= 0;
+          if (n2 == 4'b000x && ~open) isOn = true;
+          else isOn = 0;
         end
         default: begin
-          if(d_pos) isOn <= 1;
+          if(d_pos) isOn = true;
         end
       endcase
     end
     default: begin
-      st_light <= 3'b000;
-      isOn <= 0;
+      st_light = 3'b000;
+      isOn = 0;
     end
   endcase
 end
@@ -94,7 +99,9 @@ always @(posedge clk, negedge rst) begin
     if (on) begin
       case (st)  //状态判断
         2'b00: begin
-          {n5, n6, n7, n8} <= {off, off, off, off};
+          {n5, n6, n7} <= {off, off, off};
+          n8<=0;
+
           if (t >= 66000000) begin
             t <= 0;
             if (p1) begin  //拨上去时才加1,是否要写拨回去时的分支？
@@ -130,8 +137,9 @@ always @(posedge clk, negedge rst) begin
         end
 
         2'b01: begin
-          {n5, n6, n7, n8} <= {off, off, off, off};
+          {n5, n6, n7} <= {off, off, off};
           {n2, n3, n0} <= {o, o, o};
+          n8<=0;
           if (r_pos)
             if (n1 < 4'd3) n1 <= n1 + 1;
             else n1 <= 0;
@@ -145,7 +153,7 @@ always @(posedge clk, negedge rst) begin
           end
         end
         2'b10: begin  //状态3
-          //仍然是右按键增大
+          //仍然是右按键增大 
           if (r_pos) begin
             if (p1)//最右侧拨码开关上拨时表示十位数
               if (n2 > 4'd2)  //十位最多为20
@@ -159,29 +167,8 @@ always @(posedge clk, negedge rst) begin
           //确认输入
           if(m_pos)begin
             if(~isOn) begin
-              case (mode)
-              2'b00:begin //甩干
-                if(n1 + n2*10<=) begin 
-                  isOn<=1;
-                end
+             
               end
-              2'b01:begin //小
-                if(n1 + n2*10<=) begin 
-                  isOn<=1;
-                end
-              end
-              2'b10:begin //中
-                if(n1 + n2*10<=) begin 
-                  isOn<=1;
-                end
-              end
-              2'b11:begin //大
-                if(n1 + n2*10<=) begin 
-                  isOn<=1;
-                end
-              end
-              endcase
-            end 
           end
         end
       endcase

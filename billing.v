@@ -3,8 +3,6 @@
 module billing (
     input on, clk,rst,
     (* DONT_TOUCH = "1" *) input bt,
-    input u_bt,
-    input d_bt,
     input [11:0] bal,
     input [1:0] mode,
     input [11:0] set0,//传入甩干价格
@@ -12,11 +10,11 @@ module billing (
     input [11:0] set2,//中
     input [11:0] set3,//大
     input [11:0]setfine,//空转罚款
-    output wire [7:0] led_r,  //数码管信号
-    output [3:0] ena_r,  //数码管使能信号
+    output wire [7:0] led,  //数码管信号
+    output [3:0] ena,  //数码管使能信号
     output reg [7:0] st_light, //接灯
     output reg [7:0] wt_light,//水灯
-    output wire buzzer,
+    output wire buzzer
     output reg next
     );
 reg [11:0]bal={4'd1,4'd9,4'd6};
