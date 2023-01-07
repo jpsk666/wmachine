@@ -1,3 +1,5 @@
+<<<<<<< HEAD
+=======
 `timescale 1ns / 1ps
 
 module admin(
@@ -138,3 +140,4 @@ end
 
 
 endmodule
+>>>>>>> d25c47f386867feb475f56fd5feeccbfa8d46e3d

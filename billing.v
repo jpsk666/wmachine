@@ -1,18 +1,18 @@
 `timescale 1ns / 1ps
-
 module billing (
     input on, clk,rst,
-    (* DONT_TOUCH = "1" *) 
     input m_pos,u_pos,d_pos,
+    (* DONT_TOUCH = "1" *) 
+
     input [11:0] bal,
     input [1:0] mode,
     input [11:0] set0,//传入甩干价格
-    input [11:0] set1,//小
-    input [11:0] set2,//中
-    input [11:0] set3,//大
+    input [11:0] set1,//�?
+    input [11:0] set2,//�?
+    input [11:0] set3,//�?
     input [11:0]setfine,//空转罚款
-    output wire [7:0] led_r,  //数码管信号
-    output [3:0] ena_r,  //数码管使能信号
+    output wire [7:0] led_r,  //数码管信�?
+    output [3:0] ena_r,  //数码管使能信�?
     output reg [7:0] st_light, //接灯
     output reg [7:0] wt_light,//水灯
     output wire buzzer,
@@ -27,13 +27,13 @@ module billing (
 // reg [11:0]setfine={4'd0,4'd2,4'd8};
 parameter o = 4'd0;//显示0
 parameter n = 4'd11;//熄灯
-reg [26:0]t;//计时1秒
-reg [26:0]tt;//计时1秒
+reg [26:0]t;//计时1�?
+reg [26:0]tt;//计时1�?
 reg [3:0] n1=o;//数码管初始化
 reg [3:0] n2=n;
 reg [3:0] n3=4'd9;
 reg [3:0] n0=4'd9;
-reg [2:0] st = 0;  //等待收款，确认收费（等待取衣），收取空转费
+reg [2:0] st = 0;  //等待收款，确认收费（等待取衣），收取空转�?
 reg [11:0]setini={n,n,n};
 
 reg [26:0]flag=0;
@@ -92,7 +92,7 @@ always @(*) begin
     end
 end
 
-always @(*) begin//状态灯
+always @(*) begin//状�?�灯
     case (st)
       3'b000: begin
         st_light <= 8'b01000000;
@@ -119,22 +119,24 @@ always @(posedge clk, negedge rst) begin
         countdown<=8;
         buzzena_r<=0;
         {n0,n3,n2,n1}<={4'd10,setini};
+        next<=0;
     end 
     else begin
         if(on) begin
             if(st==3'b000)begin
+                next<=0;
                 buzzena_r<=1;
                 case(mode)
                     2'b00:begin//甩干
                         setini<=set0;
                     end
-                    2'b01:begin//小
+                    2'b01:begin//�?
                         setini<=set1;
                     end
-                    2'b10:begin//中
+                    2'b10:begin//�?
                         setini<=set2;
                     end
-                    2'b11:begin//大
+                    2'b11:begin//�?
                         setini<=set3;
                     end
                     default:begin
@@ -228,7 +230,6 @@ always @(posedge clk, negedge rst) begin
                 else begin
                     {n0,n3,n2,n1}<={n,n,n,4'd8};
                 end
-                if(d_pos) next<=1;
             end
         end
     end

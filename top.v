@@ -8,11 +8,11 @@ module top (
   output reg [7:0] led_r,led_l, //两组数码管的显像
   output reg [3:0] ena_r,ena_l,  //两组数码管的使能
   output reg [7:0] st_light, //8个状态灯
-  output reg [7:0] wt_light //8个水量灯
-  output reg buzzer;
+  output reg [7:0] wt_light, //8个水量灯
+  output reg buzzer
 );
 reg [1:0] state; //三大状态
-reg [2:0] mode;
+reg [1:0] mode;
 reg signed [11:0] bal; //余额
 reg [11:0]dy_price={4'd0,4'd2,4'd3}; //价格
 reg [11:0]s_price={4'd0,4'd4,4'd5};
@@ -31,19 +31,21 @@ button right(clk,r_bt,r_pos);
 
 //pre模块的例化
 reg pre_on;
-reg pre_isOn;
+wire pre_isOn;
 wire [7:0] pre_led_r,pre_led_l;
 wire [3:0] pre_ena_r,pre_ena_l;
-reg signed [11:0] pre_bal;
-reg [1:0] pre_mode;
-reg [2:0] pre_st_light;
+wire signed [11:0] pre_bal;
+wire [1:0] pre_mode;
+wire [2:0] pre_st_light;
 pre pre(
   pre_on,clk,rst,
   sw[0],sw[1],sw[2],sw[3],
-  r_pos,m_pos,u_pos,d_pos,
+  r_pos,m_pos,u_pos,
   pre_isOn,
-  pre_led_r,pre_ena_r,
-  pre_led_l,pre_ena_l,
+  pre_led_r,
+  pre_ena_r,
+    pre_led_l,
+    pre_ena_l,
   pre_bal,
   pre_mode,
   pre_st_light
@@ -53,9 +55,9 @@ pre pre(
 reg wash_on;
 wire [7:0] wash_led;
 wire [3:0] wash_ena;
-reg [7:0] wash_st_light;
-reg [7:0] wash_wt_light;
-reg wash_next;
+wire [7:0] wash_st_light;
+wire [7:0] wash_wt_light;
+wire wash_next;
 wash wash(
   wash_on, clk, rst,
   mode,
@@ -71,10 +73,10 @@ wash wash(
 reg billing_on;
 wire [7:0] billing_led;
 wire [3:0] billing_ena;
-reg [7:0] billing_st_light;
-reg [7:0] billing_wt_light;
+wire [7:0] billing_st_light;
+wire [7:0] billing_wt_light;
 wire billing_buzzer;
-reg billing_next;
+wire billing_next;
 billing billing(
   billing_on,clk,rst,
   m_pos,u_pos,d_pos,
@@ -100,6 +102,7 @@ always @(posedge clk, negedge rst) begin
     led_r<=8'b00000000;
     ena_l<=4'b0000;
     ena_r<=4'b0000;
+    state<= 0;
   end
   else begin
     case (state)
@@ -115,7 +118,7 @@ always @(posedge clk, negedge rst) begin
         ena_l<=4'b0000;
         ena_r<=4'b0000;
         if(m_pos) begin
-          state<=2'b10;
+          state<=2'b01;
         end
       end
       2'b01: begin //pre阶段
@@ -124,12 +127,13 @@ always @(posedge clk, negedge rst) begin
         led_r<=pre_led_r;
         ena_l<=pre_ena_l;
         ena_r<=pre_ena_r;
-        mode<=pre_mode;
+        
         st_light[2:0]<=pre_st_light;
         bal<=pre_bal;
         if(m_pos && pre_isOn) begin
           state<=2'b10;
           pre_on<=0;
+          mode<=pre_mode;
         end
       end
       2'b10: begin //wash阶段
@@ -138,8 +142,9 @@ always @(posedge clk, negedge rst) begin
         ena_r<=wash_ena;
         led_l<=8'b00000000;
         ena_l<=4'b0000;
+        wt_light<= wash_wt_light;
         st_light<=wash_st_light;
-        if(m_pos && wash_next) begin
+        if(wash_next) begin
           state<=2'b11;
           wash_on<=0;
         end
