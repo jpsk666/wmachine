@@ -187,7 +187,6 @@ module addition(
   reg [10:0]q;
   reg [9:0]resbin;
   always@(*)begin
-    sig=4'd10;
     q={1'b0,numbin}+{1'b0,subbin};
     if(q[10]!=1'b0)begin
       resbin=10'b1111100111;
@@ -198,6 +197,49 @@ module addition(
   end
   wire [11:0]resbcd;
   bintobcd btb3(resbin,resbcd);
-  assign res={sig,resbcd};
+  assign res={4'd10,resbcd};
+  // assign checkbin=resbin;
+endmodule
+
+module toincome(
+    input [11:0] bal,
+    input [15:0] evebal,
+    output [11:0] res
+    // output [9:0] checkbin
+);
+  wire [9:0] numbin,subbin;
+  bcdtobin btb1(bal,numbin);
+  bcdtobin btb2(evebal[11:0],subbin);
+  reg c4,c0;
+  reg [9:0]s;
+  reg [10:0]q;
+  reg [3:0]sig;
+  reg [9:0]resbin;
+  always@(*)begin
+    if(evebal[15:12]==4'd10)begin
+      q={1'b0,numbin}+{1'b0,subbin};
+      if(q[10]!=1'b0)begin
+        resbin=10'b1111100111;
+      end
+      else begin
+        resbin=numbin+subbin;
+      end
+    end
+    else begin
+      c0=1;
+      q={1'b0,numbin}+{1'b0,~subbin}+1;
+      c4=q[10];
+      s=q[9:0];
+      if(c4==1)begin
+        resbin=s;
+      end
+      else if(c4==0)begin
+        resbin=(~s)+1;
+      end
+    end
+  end
+  wire [11:0]resbcd;
+  bintobcd btb3(resbin,resbcd);
+  assign res=resbcd;
   // assign checkbin=resbin;
 endmodule

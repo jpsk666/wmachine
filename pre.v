@@ -21,7 +21,7 @@ module pre (
     output [3:0] ena_r,  //数码管使能信号
     output wire [7:0] led_l,  //左数码管信号
     output [3:0] ena_l,  //左数码管使能信号
-    output reg signed [12:1] bal,  //余额，最大999
+    output reg [11:0] bal,  //余额，最大999
 
     output reg [1:0] mode,  //模式 //有4个
 
@@ -143,7 +143,7 @@ module pre (
               if (next1) begin
                 st <= 2'b01;
                 n1 <= 0;  //可行，转化状态时直接赋值0
-                {bal[4:1], bal[8:5], bal[12:9]} <= {n1, n2, n3};
+                {bal[3:0], bal[7:4], bal[11:8]} <= {n1, n2, n3};
                 //可以这么做？
               end else begin
                 st <= 1'b0;

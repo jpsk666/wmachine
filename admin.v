@@ -2,38 +2,38 @@
 
 module admin(
     input on,clk,rst,
-    p1,p2,//两个拨码开关
+    p1,p2,//两个拨码�?�?
     (* DONT_TOUCH = "1" *) 
     input r_pos,m_pos,u_pos,d_pos,//按键
-    input [11:0]dy_price,
-    input [11:0]s_price,
-    input [11:0]m_price,
-    input [11:0]b_price,
-    input [11:0]setfine,
+    input [11:0]dy_price_old,
+    input [11:0]s_price_old,
+    input [11:0]m_price_old,
+    input [11:0]b_price_old,
+    input [11:0]setfine_old,
     input [11:0]runtime,
     input [11:0]profit,
-    output wire [7:0] led_r,  //数码管信号
-    output [3:0] ena_r,  //数码管使能信号
+    output wire [7:0] led_r,  //数码管信�?
+    output [3:0] ena_r,  //数码管使能信�?
     output wire [7:0] led_l,  //左数码管信号
     output [3:0] ena_l,  //左数码管使能信号
-    output reg [11:0]dy_price,
-    output reg [11:0]s_price,
-    output reg [11:0]m_price,
-    output reg [11:0]b_price,
-    output reg [11:0]setfine,
-    output reg next
+    output reg [11:0]dy_price_new,
+    output reg [11:0]s_price_new,
+    output reg [11:0]m_price_new,
+    output reg [11:0]b_price_new,
+    output reg [11:0]setfine_new,
+    output next
 );
-reg [2:0] st = 3'b000;  //状态
-reg [27:0] t;  //0.66秒计数
-reg [3:0] n1, n2, n3, n0, n5, n6, n7, n8;//显像管变量
+reg [2:0] st = 3'b111;  //状�??
+reg [27:0] t;  //0.66秒计�?
+reg [3:0] n1,n2,n3, n0, n5, n6, n7, n8;//显像管变�?
 
 parameter o = 1'b0;
 parameter off = 4'hb;
 parameter true = 1'b1;
 
 wire next1;
-assign next1 = ~(p1 | p2 );//确认开关复位
-
+assign next1 = ~(p1 | p2 );//确认�?关复�?
+assign next= ~(p1|p2)&(st==3'b110);
 scan4 scanner (
     clk,
     n1,
@@ -56,12 +56,16 @@ scan4 scanner2 (
 
 always @(posedge clk, negedge rst) begin
   if (!rst) begin
-    st <= 3'b000;
-    {n1, n2} <= {o, o};
-    {n5, n6, n7, n8, n3, n0} <= {off, off, off, off, off, off};
+    st <= 3'b111;
+    {n1, n2,n3} <= {dy_price_old[3:0],dy_price_old[7:4],dy_price_old[11:8]};
+    {n5, n6, n7, n8, n0} <= {off, off, off, off, off};
   end else begin
     if (on) begin
-      case (st)  //状态判断
+      case (st)  //状�?�判�?
+        3'b111:begin
+          {n1, n2,n3} <= {dy_price_old[3:0],dy_price_old[7:4],dy_price_old[11:8]};
+          st<=3'b000;
+        end
         3'b000: begin//设置甩干价格
           {n5, n6, n7} <= {off, off, off};
           n8<=0;
@@ -79,8 +83,8 @@ always @(posedge clk, negedge rst) begin
 
           if (m_pos && next1) begin 
             st <= 3'b001;
-            {dy_price[3:0], dy_price[7:4], dy_price[11:8]} <= {n1, n2, n3};
-            {n1, n2, n3} <= {s_price[3:0], s_price[7:4], s_price[11:8]};
+            {dy_price_new[3:0], dy_price_new[7:4], dy_price_new[11:8]} <= {n1, n2, n3};
+            {n1, n2, n3} <= {s_price_old[3:0], s_price_old[7:4], s_price_old[11:8]};
           end
           else st <= 3'b000;
         end
@@ -101,35 +105,12 @@ always @(posedge clk, negedge rst) begin
 
           if (m_pos && next1) begin 
             st <= 3'b010;
-            {s_price[3:0], s_price[7:4], s_price[11:8]} <= {n1, n2, n3};
-            {n1, n2, n3} <= {m_price[3:0], m_price[7:4], m_price[11:8]};
+            {s_price_new[3:0], s_price_new[7:4], s_price_new[11:8]} <= {n1, n2, n3};
+            {n1, n2, n3} <= {m_price_old[3:0], m_price_old[7:4], m_price_old[11:8]};
           end
           else st <= 3'b001;
         end
         3'b010: begin//设置中件价格
-          {n5, n6, n7} <= {off, off, off};
-          n8<=1;
-          if (t >= 66000000) begin
-            t <= 0;
-            if (p1) begin  
-              if (n1 != 4'd9) n1 <= n1 + 1;
-              else n1 <= 0;
-            end else n1 <= n1;
-            if (p2) begin
-              if (n2 != 4'd9) n2 <= n2 + 1;
-              else n2 <= 0;
-            end else n2 <= n2;
-          end else t <= t + 1;
-
-          if (m_pos && next1) begin 
-            st <= 3'b011;
-            {m_price[3:0], m_price[7:4], m_price[11:8]} <= {n1, n2, n3};
-            {n1, n2, n3} <= {b_price[3:0], b_price[7:4], b_price[11:8]};
-          end
-          else st <= 3'b010;
-        end
-        
-        3'b011: begin//设置大件价格
           {n5, n6, n7} <= {off, off, off};
           n8<=2;
           if (t >= 66000000) begin
@@ -145,14 +126,14 @@ always @(posedge clk, negedge rst) begin
           end else t <= t + 1;
 
           if (m_pos && next1) begin 
-            st <= 3'b100;
-            {b_price[3:0], b_price[7:4], b_price[11:8]} <= {n1, n2, n3};
-            {n1, n2, n3} <= {setfine[3:0], setfine[7:4], setfine[11:8]};
+            st <= 3'b011;
+            {m_price_new[3:0], m_price_new[7:4], m_price_new[11:8]} <= {n1, n2, n3};
+            {n1, n2, n3} <= {b_price_old[3:0], b_price_old[7:4], b_price_old[11:8]};
           end
-          else st <= 3'b011;
+          else st <= 3'b010;
         end
-
-        3'b100: begin//设置超时罚款
+        
+        3'b011: begin//设置大件价格
           {n5, n6, n7} <= {off, off, off};
           n8<=3;
           if (t >= 66000000) begin
@@ -168,24 +149,47 @@ always @(posedge clk, negedge rst) begin
           end else t <= t + 1;
 
           if (m_pos && next1) begin 
+            st <= 3'b100;
+            {b_price_new[3:0], b_price_new[7:4], b_price_new[11:8]} <= {n1, n2, n3};
+            {n1, n2, n3} <= {setfine_old[3:0], setfine_old[7:4], setfine_old[11:8]};
+          end
+          else st <= 3'b011;
+        end
+
+        3'b100: begin//设置超时罚款
+          {n5, n6, n7} <= {off, off, off};
+          n8<=4;
+          if (t >= 66000000) begin
+            t <= 0;
+            if (p1) begin  
+              if (n1 != 4'd9) n1 <= n1 + 1;
+              else n1 <= 0;
+            end else n1 <= n1;
+            if (p2) begin
+              if (n2 != 4'd9) n2 <= n2 + 1;
+              else n2 <= 0;
+            end else n2 <= n2;
+          end else t <= t + 1;
+
+          if (m_pos && next1) begin 
             st <= 3'b101;
-            {setfine[3:0], setfine[7:4], setfine[11:8]} <= {n1, n2, n3};
+            {setfine_new[3:0], setfine_new[7:4], setfine_new[11:8]} <= {n1, n2, n3};
           end
           else st <= 3'b100;
         end
-        3'b101: begin//显示收款数
+        3'b101: begin//显示收款�?
           {n5, n6, n7} <= {off, off, off};
-          n8<=4;
-          {n1, n2, n3} <= {profit[3:0], profit[7:4], profit[11:8]}
+          n8<=5;
+          {n1, n2, n3} <= {profit[3:0], profit[7:4], profit[11:8]};
           if (m_pos && next1) st <= 3'b110;
           else st <= 3'b101;
         end
         3'b110: begin//显示运行时间
           {n5, n6, n7} <= {off, off, off};
-          n8<=4;
-          {n1, n2, n3} <= {runtime[3:0], runtime[7:4], runtime[11:8]}
+          n8<=6;
+          {n1, n2, n3} <= {runtime[3:0], runtime[7:4], runtime[11:8]};
           if (m_pos && next1) begin
-            next<=1;
+            st<=3'b111;
           end
           else st <= 3'b110;
         end

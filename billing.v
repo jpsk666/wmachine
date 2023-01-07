@@ -18,7 +18,8 @@ module billing (
     output reg [7:0] st_light, //接灯
     output reg [7:0] wt_light,//水灯
     output wire buzzer,
-    output reg next
+    output reg next,
+    output reg [11:0]income
     );
 // reg [11:0]bal={4'd1,4'd9,4'd6};
 // reg [1:0]mode=2'b01;
@@ -118,11 +119,15 @@ always @(*) begin//状态灯
     endcase
 end
 
-reg buzzena_r=0;
+reg [1:0]buzzena_r=0;
 buzz bz(clk,rst,buzzena_r,buzzer);
+reg [15:0]endbal;
+wire [11:0]getincome;
+toincome ti(bal,endbal,getincome);
 
 always @(posedge clk, negedge rst) begin
     if (!rst) begin
+        income<=0;
         st <= 1'b0;
         nowsign<=4'd0;
         flag<=0;
@@ -136,9 +141,10 @@ always @(posedge clk, negedge rst) begin
     else begin
         if(on) begin
             if(st==3'b000)begin
+                income<=0;
                 {n8,n7,n6,n5}<={4'hc,4'hb,4'hb,4'hb};
                 next<=0;
-                buzzena_r<=1;
+                buzzena_r<=2'b01;
                 case(mode)
                     2'b00:begin//甩干
                         setini<=set0;
@@ -177,6 +183,7 @@ always @(posedge clk, negedge rst) begin
                     num<=bal;
                     sub<=setfine;
                     st<=3'b010;
+                    buzzena_r<=2'b10;
                 end
                 if(u_pos)begin
                     buzzena_r<=0;
@@ -200,6 +207,7 @@ always @(posedge clk, negedge rst) begin
                     {n0,n3,n2,n1}<=res;
                     flag<=0;
                 end
+                endbal<=res;
                 if(u_pos)begin
                     tt<=0;
                     t<=0;
@@ -209,6 +217,7 @@ always @(posedge clk, negedge rst) begin
             else if(st==3'b010) begin
                 {n8,n7,n6,n5}<={4'hc,4'hb,4'hb,4'hb};
                 countdown<=0;
+                buzzena_r<=2'b10;
                 if(t>=100000000)begin
                     nowsign<=res[15:12];
                     num<=res[11:0];
@@ -223,10 +232,12 @@ always @(posedge clk, negedge rst) begin
                     tt<=0;
                     t<=0;
                     nowb<=res;
+                    buzzena_r<=2'b0;
                     st<=3'b001;
                 end
             end
             else begin
+                income<=getincome;
                 {n8,n7,n6,n5}<={4'hc,4'hb,4'hb,4'hb};
                 if(t>=100000000)begin
                     tt<=tt+1;
@@ -248,8 +259,10 @@ always @(posedge clk, negedge rst) begin
                     {n0,n3,n2,n1}<={n,n,n,4'd8};
                 end
                 if(tt>=8||u_pos||m_pos||d_pos)begin
+                    income<=0;
                     st<=3'b000;
                     countdown<=8;
+                    buzzena_r<=2'b0;
                     next<=1;
                 end
             end

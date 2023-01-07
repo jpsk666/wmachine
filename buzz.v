@@ -3,7 +3,7 @@
 module buzz (
     input clk,
     input rst,
-    input ena,
+    input [1:0]ena,
     output reg buzzer
 );
 //定义音符时序周期数d
@@ -36,8 +36,11 @@ module buzz (
 		if(!rst) begin
 			flag <= 1'b0;
 		end
-		else if(ena) begin
-			flag <= 1'b0;
+		else if(ena==2'b10) begin
+			flag <= 1'b1;
+		end
+		else begin
+			flag <=1'b0;
 		end
 	end
 	
@@ -46,7 +49,7 @@ module buzz (
 		if(!rst)
 			YINFU <= 48;
 		else if(flag == 1'b1)
-			YINFU <= 36;
+			YINFU <= 48;
 		else
 			YINFU <= 48;
 	end
@@ -169,46 +172,60 @@ module buzz (
 			endcase
 		end
 		else begin
-			case(cnt2)	//两只老虎歌谱
-				0 : pre_set = M1;
-				1 : pre_set = M2;
-				2 : pre_set = M3;
-				3 : pre_set = M1;
-				4 : pre_set = M1;
-				5 : pre_set = M2;
-				6 : pre_set = M3;
-				7 : pre_set = M1;
-				8 : pre_set = M3;
-				9 : pre_set = M4;
-				10: pre_set = M5;
-				11: pre_set = M0;
+			case(cnt2)	
+				0 : pre_set = M7;
+				1 : pre_set = M7;
+				2 : pre_set = M7;
+				3 : pre_set = M7;
+				4 : pre_set = M7;
+				5 : pre_set = M7;
+				6 : pre_set = M7;
+				7 : pre_set = M7;
+			
+				8 : pre_set = M7;
+				9 : pre_set = M7;
+				10: pre_set = M7;
+				11: pre_set = M7;
+				12: pre_set = M7;
+				13: pre_set = M7;
+				14: pre_set = M7;
+				15: pre_set = M7;
+			
+				16: pre_set = M7;
+				17: pre_set = M7;
+				18: pre_set = M7;
+				19: pre_set = M7;
+				20: pre_set = M7;
+				21: pre_set = M7;
+				22: pre_set = M7;
+				23: pre_set = M7;
 				
-				12: pre_set = M3;
-				13: pre_set = M4;
-				14: pre_set = M5;
-				15: pre_set = M0;
+				24: pre_set = M7;
+				25: pre_set = M7;
+				26: pre_set = M7;
+				27: pre_set = M7;
+				28: pre_set = M7;
+				29: pre_set = M7;
+				30: pre_set = M7;
+				31: pre_set = M7;
 				
-				16: pre_set = M5;
-				17: pre_set = M6;
-				18: pre_set = M5;
-				19: pre_set = M4;
-				20: pre_set = M3;
-				21: pre_set = M1;
-				22: pre_set = M5;
-				23: pre_set = M6;
-				24: pre_set = M5;
-				25: pre_set = M4;
-				26: pre_set = M3;
-				27: pre_set = M1;
-				28: pre_set = M2;
-				29: pre_set = M5;
-				30: pre_set = M1;
-				31: pre_set = M0;
+				32: pre_set = M7;
+				33: pre_set = M7;
+				34: pre_set = M7;
+				35: pre_set = M7;
+				36: pre_set = M7;
+				37: pre_set = M7;
+				38: pre_set = M7;
+				39: pre_set = M7;
 				
-				32: pre_set = M2;
-				33: pre_set = M5;
-				34: pre_set = M1;
-				35: pre_set = M0;
+				40: pre_set = M7;
+				41: pre_set = M7;
+				42: pre_set = M7;
+				43: pre_set = M7;
+				44: pre_set = M7;
+				45: pre_set = M7;
+				46: pre_set = M7;
+				47: pre_set = M7;
 			endcase
 		end
 	end
@@ -218,7 +235,7 @@ module buzz (
 	
 	//向蜂鸣器输出脉冲
 	always @(posedge clk or negedge rst) begin
-    if(ena)begin
+    if(ena!=2'b0)begin
       if(!rst) begin
         buzzer <= 1'b1;
       end

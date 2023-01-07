@@ -11,15 +11,18 @@ module top (
   output reg [7:0] wt_light, //8个水量灯
   output reg buzzer
 );
-reg [1:0] state; //三大状态
+reg [2:0] state; //三大状态
 reg [1:0] mode;
-reg signed [11:0] bal; //余额
-reg [11:0]dy_price={4'd0,4'd2,4'd3}; //价格
-reg [11:0]s_price={4'd0,4'd4,4'd5};
-reg [11:0]m_price={4'd0,4'd6,4'd7};
-reg [11:0]b_price={4'd0,4'd8,4'd9};
-reg [11:0]setfine={4'd0,4'd2,4'd8}; //超时罚款
-reg o_price; //是否按默认价格收费
+reg [11:0] bal; //余额
+reg [11:0]dy_price_old={4'd0,4'd2,4'd3}; //价格
+reg [11:0]s_price_old={4'd0,4'd4,4'd5};
+reg [11:0]m_price_old={4'd0,4'd6,4'd7};
+reg [11:0]b_price_old={4'd0,4'd8,4'd9};
+reg [11:0]setfine_old={4'd0,4'd2,4'd8}; //超时罚款
+reg [11:0]old_runtime;
+reg [11:0]old_profit;
+reg isAdmin; //是否管理员模式
+
 
 //按钮模块（中上下左右）
 wire m_pos,u_pos,l_pos,d_pos,r_pos;
@@ -29,12 +32,70 @@ button down(clk,d_bt,d_pos);
 button left(clk,l_bt,l_pos);
 button right(clk,r_bt,r_pos);
 
+
+//独立计时模块
+wire[15:0] new_runtime;
+reg [11:0] add_runtime=12'b000000000001;
+addition addition0(
+  old_runtime,
+  add_runtime,
+  new_runtime
+);
+reg [27:0] t;
+always @(posedge clk) begin
+  if(t>100000000) begin //计时1秒
+      t<=0;
+      old_runtime<=new_runtime[11:0];
+  end
+  else t<=t + 1;
+end
+
+//盈利累计例化
+wire [15:0] new_profit;
+reg [11:0] add_profit;
+addition addition1(
+  old_profit,
+  add_profit,
+  new_profit
+);
+
+
+//admin模块的例化
+reg admin_on;
+wire admin_next;
+wire [11:0] dy_price_new;
+wire [11:0] s_price_new;
+wire [11:0] m_price_new;
+wire [11:0] b_price_new;
+wire [11:0] setfine_new;
+wire [7:0] admin_led_r,admin_led_l;
+wire [3:0] admin_ena_r,admin_ena_l;
+admin admin(
+  admin_on,clk,rst,
+  sw[0],sw[1],
+  r_pos,m_pos,u_pos,d_pos,
+  dy_price_old,
+  s_price_old,
+  m_price_old,
+  b_price_old,
+  setfine_old,
+  old_runtime,old_profit,
+  admin_led_r,admin_ena_r,
+  admin_led_l,admin_ena_l,
+  dy_price_new,
+  s_price_new,
+  m_price_new,
+  b_price_new,
+  setfine_new,
+  admin_next
+);
+
 //pre模块的例化
 reg pre_on;
 wire pre_isOn;
 wire [7:0] pre_led_r,pre_led_l;
 wire [3:0] pre_ena_r,pre_ena_l;
-wire signed [11:0] pre_bal;
+wire [11:0] pre_bal;
 wire [1:0] pre_mode;
 wire [2:0] pre_st_light;
 pre pre(
@@ -83,17 +144,19 @@ wire [7:0] billing_st_light;
 wire [7:0] billing_wt_light;
 wire billing_buzzer;
 wire billing_next;
+wire [11:0] income;
 billing billing(
   billing_on,clk,rst,
   m_pos,u_pos,d_pos,
   bal,mode,
-  dy_price,s_price,m_price,b_price,setfine,
+  dy_price_old,s_price_old,m_price_old,b_price_old,setfine_old,
   billing_led,billing_led_l,
   billing_ena,billing_ena_l,
   billing_st_light,
   billing_wt_light,
   billing_buzzer,
-  billing_next
+  billing_next,
+  income
 );
 
 always @(posedge clk, negedge rst) begin
@@ -108,26 +171,46 @@ always @(posedge clk, negedge rst) begin
     led_r<=8'b00000000;
     ena_l<=4'b0000;
     ena_r<=4'b0000;
-    state<= 0;
+    state<=3'b00;
+    isAdmin<=0;
   end
   else begin
     case (state)
-      2'b00: begin //待机阶段
-        pre_on<=0;
-        wash_on<=0;
-        billing_on<=0;
-        st_light<=8'b00000000;
-        bal<=12'b000000000000;
-        mode<=2'b00;
-        led_l<=8'b00000000;
-        led_r<=8'b00000000;
-        ena_l<=4'b0000;
-        ena_r<=4'b0000;
-        if(m_pos) begin
-          state<=2'b01;
+      3'b100:begin
+        admin_on<=1;
+        led_l<=admin_led_l;
+        led_r<=admin_led_r;
+        ena_l<=admin_ena_l;
+        ena_r<=admin_ena_r;
+        if(m_pos & admin_next) begin
+          admin_on<=0;
+          dy_price_old<=dy_price_new;
+          s_price_old<=s_price_new;
+          m_price_old<=m_price_new;
+          b_price_old<=b_price_new;
+          setfine_old<=setfine_new;
+          state<=3'b000;
         end
       end
-      2'b01: begin //pre阶段
+
+      3'b000: begin //待机阶段
+
+          pre_on<=0;
+          wash_on<=0;
+          billing_on<=0;
+          st_light<=8'b00000000;
+          bal<=12'b000000000000;
+          mode<=2'b00;
+          led_l<=8'b10101010;//待机显示花样
+          led_r<=8'b10101010;
+          ena_l<=4'b1111;
+          ena_r<=4'b1111;
+       
+        if(u_pos) state<=3'b100;//按上键进入管理员模式
+        if(m_pos) state<=3'b001;
+       
+      end
+      3'b001: begin //pre阶段
         pre_on<=1;
         led_l<=pre_led_l;
         led_r<=pre_led_r;
@@ -137,23 +220,33 @@ always @(posedge clk, negedge rst) begin
         st_light[2:0]<=pre_st_light;
         bal<=pre_bal;
         if(m_pos && pre_isOn) begin
-          state<=2'b10;
+          state<=3'b010;
           pre_on<=0;
           mode<=pre_mode;
+          // if(pre_mode==2'b00) begin
+          //   add_profit<=dy_price_old;
+          // end
+          // else if(pre_mode==2'b01) begin
+          //   add_profit<=s_price_old;
+          // end
+          // else if(pre_mode==2'b10) begin
+          //   add_profit<=m_price_old;
+          // end
+          // else if(pre_mode==2'b11) begin
+          //   add_profit<=b_price_old;
+          // end
         end
       end
-      2'b10: begin //wash阶段
+      3'b010: begin //wash阶段
         wash_on<=1;
         led_r<=wash_led;
         led_l<=wash_led_l;
         ena_r<=wash_ena;
         ena_l<=wash_ena_l;
-        // led_l<=8'b00000000;
-        // ena_l<=4'b0000;
         wt_light<= wash_wt_light;
         st_light<=wash_st_light;
         if(wash_next) begin
-          state<=2'b11;
+          state<=3'b011;
           wash_on<=0;
         end
       end
@@ -163,14 +256,14 @@ always @(posedge clk, negedge rst) begin
         ena_r<=billing_ena;
         led_l<=billing_led_l;
         ena_l<=billing_ena_l;
-        // led_l<=8'b00000000;
-        // ena_l<=4'b0000;
         st_light<=billing_st_light;
         wt_light<=billing_wt_light;
         buzzer<=billing_buzzer;
+        add_profit<=income;
         if(billing_next) begin
-          state<=2'b00;
+          state<=2'b000;
           billing_on<=0;
+          old_profit<=new_profit[11:0];
         end
       end
       default: begin
