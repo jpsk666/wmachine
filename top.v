@@ -55,15 +55,19 @@ pre pre(
 reg wash_on;
 wire [7:0] wash_led;
 wire [3:0] wash_ena;
+wire [7:0] wash_led_l;
+wire [3:0] wash_ena_l;
 wire [7:0] wash_st_light;
 wire [7:0] wash_wt_light;
 wire wash_next;
 wash wash(
   wash_on, clk, rst,
   mode,
-  m_pos,
+  m_pos,u_pos,
   wash_led,
+  wash_led_l,
   wash_ena,
+  wash_ena_l,
   wash_st_light,
   wash_wt_light,
   wash_next
@@ -73,6 +77,8 @@ wash wash(
 reg billing_on;
 wire [7:0] billing_led;
 wire [3:0] billing_ena;
+wire [7:0] billing_led_l;
+wire [3:0] billing_ena_l;
 wire [7:0] billing_st_light;
 wire [7:0] billing_wt_light;
 wire billing_buzzer;
@@ -82,8 +88,8 @@ billing billing(
   m_pos,u_pos,d_pos,
   bal,mode,
   dy_price,s_price,m_price,b_price,setfine,
-  billing_led,
-  billing_ena,
+  billing_led,billing_led_l,
+  billing_ena,billing_ena_l,
   billing_st_light,
   billing_wt_light,
   billing_buzzer,
@@ -139,9 +145,11 @@ always @(posedge clk, negedge rst) begin
       2'b10: begin //wash阶段
         wash_on<=1;
         led_r<=wash_led;
+        led_l<=wash_led_l;
         ena_r<=wash_ena;
-        led_l<=8'b00000000;
-        ena_l<=4'b0000;
+        ena_l<=wash_ena_l;
+        // led_l<=8'b00000000;
+        // ena_l<=4'b0000;
         wt_light<= wash_wt_light;
         st_light<=wash_st_light;
         if(wash_next) begin
@@ -153,12 +161,14 @@ always @(posedge clk, negedge rst) begin
         billing_on<=1;
         led_r<=billing_led;
         ena_r<=billing_ena;
-        led_l<=8'b00000000;
-        ena_l<=4'b0000;
+        led_l<=billing_led_l;
+        ena_l<=billing_ena_l;
+        // led_l<=8'b00000000;
+        // ena_l<=4'b0000;
         st_light<=billing_st_light;
         wt_light<=billing_wt_light;
         buzzer<=billing_buzzer;
-        if(m_pos && billing_next) begin
+        if(billing_next) begin
           state<=2'b00;
           billing_on<=0;
         end

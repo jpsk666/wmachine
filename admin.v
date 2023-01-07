@@ -1,12 +1,17 @@
-<<<<<<< HEAD
-=======
 `timescale 1ns / 1ps
 
 module admin(
     input on,clk,rst,
-    p1,p2,p3,sign,
+    p1,p2,//两个拨码开关
     (* DONT_TOUCH = "1" *) 
     input r_pos,m_pos,u_pos,d_pos,//按键
+    input [11:0]dy_price,
+    input [11:0]s_price,
+    input [11:0]m_price,
+    input [11:0]b_price,
+    input [11:0]setfine,
+    input [11:0]runtime,
+    input [11:0]profit,
     output wire [7:0] led_r,  //数码管信号
     output [3:0] ena_r,  //数码管使能信号
     output wire [7:0] led_l,  //左数码管信号
@@ -15,23 +20,20 @@ module admin(
     output reg [11:0]s_price,
     output reg [11:0]m_price,
     output reg [11:0]b_price,
-    output reg [11:0]setfine
+    output reg [11:0]setfine,
+    output reg next
 );
+reg [2:0] st = 3'b000;  //状态
 reg [27:0] t;  //0.66秒计数
-reg [29:0] alarm_t; //2.5s
-reg [3:0] n1, n2, n3, n0;  //1~3：个位至百位; 0:符号位
-reg [3:0] n5, n6, n7, n8;  //5~8 从右到左
-reg open = 0;//盖子是否打开状态
-reg [3:0] lid_state;
-
+reg [3:0] n1, n2, n3, n0, n5, n6, n7, n8;//显像管变量
 
 parameter o = 1'b0;
 parameter off = 4'hb;
 parameter true = 1'b1;
+
 wire next1;
-assign next1 = ~(p1 | p2 | p3 | sign) & (n0 != 10);
-//四个开关一个都不能上拨，且第一位不能是负数，才能下一阶段
-reg [1:0] st = 2'b00;  //3种状态
+assign next1 = ~(p1 | p2 );//确认开关复位
+
 scan4 scanner (
     clk,
     n1,
@@ -54,19 +56,18 @@ scan4 scanner2 (
 
 always @(posedge clk, negedge rst) begin
   if (!rst) begin
-    st <= 1'b0;
-    {n1, n2, n3, n0} <= {o, o, o, o};
-    {n5, n6, n7, n8} <= {off, off, off, off};
+    st <= 3'b000;
+    {n1, n2} <= {o, o};
+    {n5, n6, n7, n8, n3, n0} <= {off, off, off, off, off, off};
   end else begin
     if (on) begin
       case (st)  //状态判断
-        2'b00: begin
+        3'b000: begin//设置甩干价格
           {n5, n6, n7} <= {off, off, off};
           n8<=0;
-
           if (t >= 66000000) begin
             t <= 0;
-            if (p1) begin  //拨上去时才加1,是否要写拨回去时的分支？
+            if (p1) begin  
               if (n1 != 4'd9) n1 <= n1 + 1;
               else n1 <= 0;
             end else n1 <= n1;
@@ -74,64 +75,119 @@ always @(posedge clk, negedge rst) begin
               if (n2 != 4'd9) n2 <= n2 + 1;
               else n2 <= 0;
             end else n2 <= n2;
-            if (p3) begin
-              if (n3 != 4'd9) n3 <= n3 + 1;
-              else n3 <= 0;
-            end else n3 <= n3;
-            if (sign) begin
-              if (n0 != 4'd10) n0 <= 4'd10;  //10代表负号
-              else n0 <= 0;
-            end else n0 <= n0;
           end else t <= t + 1;
 
-          if (m_pos) begin  //如果按按钮就判断是否下一阶段
-            if (next1) begin
-              st <= 2'b01;
-              n1 <= 0;  //可行，转化状态时直接赋值0
-              {bal[4:1], bal[8:5], bal[12:9]} <= {n1, n2, n3};
-              //可以这么做？
-            end 
-            else begin
-              st <= 1'b0;
-              {n0, n1, n2, n3} <= {o, o, o, o};
-            end
-          end else st <= 1'b0;
+          if (m_pos && next1) begin 
+            st <= 3'b001;
+            {dy_price[3:0], dy_price[7:4], dy_price[11:8]} <= {n1, n2, n3};
+            {n1, n2, n3} <= {s_price[3:0], s_price[7:4], s_price[11:8]};
+          end
+          else st <= 3'b000;
         end
-
-        2'b01: begin
+        3'b001: begin//设置小件价格
           {n5, n6, n7} <= {off, off, off};
-          {n2, n3, n0} <= {o, o, o};
-          n8<=0;
-          if (r_pos)
-            if (n1 < 4'd3) n1 <= n1 + 1;
-            else n1 <= 0;
-          else n1 <= n1;
-
-          if (u_pos) begin //开盖，进入下一状态
-            st <= 2'b10;
-            mode <= n1[1:0];//确定模式
-            n8 <= n1;//放在最左侧显示
-            {n0, n1, n2, n3} <= {o, o, o, o};
-          end
-        end
-        2'b10: begin  //状态3
-          //仍然是右按键增大 
-          if (r_pos) begin
-            if (p1)//最右侧拨码开关上拨时表示十位数
-              if (n2 > 4'd2)  //十位最多为20
-                n2 <= 0;
-              else n2 <= n2 + 1;
-            else begin
-              if (1 < 4'd9) n1 <= n1 + 1;
+          n8<=1;
+          if (t >= 66000000) begin
+            t <= 0;
+            if (p1) begin  
+              if (n1 != 4'd9) n1 <= n1 + 1;
               else n1 <= 0;
-            end
+            end else n1 <= n1;
+            if (p2) begin
+              if (n2 != 4'd9) n2 <= n2 + 1;
+              else n2 <= 0;
+            end else n2 <= n2;
+          end else t <= t + 1;
+
+          if (m_pos && next1) begin 
+            st <= 3'b010;
+            {s_price[3:0], s_price[7:4], s_price[11:8]} <= {n1, n2, n3};
+            {n1, n2, n3} <= {m_price[3:0], m_price[7:4], m_price[11:8]};
           end
-          //确认输入
-          if(m_pos)begin
-            if(~isOn) begin
-             
-              end
+          else st <= 3'b001;
+        end
+        3'b010: begin//设置中件价格
+          {n5, n6, n7} <= {off, off, off};
+          n8<=1;
+          if (t >= 66000000) begin
+            t <= 0;
+            if (p1) begin  
+              if (n1 != 4'd9) n1 <= n1 + 1;
+              else n1 <= 0;
+            end else n1 <= n1;
+            if (p2) begin
+              if (n2 != 4'd9) n2 <= n2 + 1;
+              else n2 <= 0;
+            end else n2 <= n2;
+          end else t <= t + 1;
+
+          if (m_pos && next1) begin 
+            st <= 3'b011;
+            {m_price[3:0], m_price[7:4], m_price[11:8]} <= {n1, n2, n3};
+            {n1, n2, n3} <= {b_price[3:0], b_price[7:4], b_price[11:8]};
           end
+          else st <= 3'b010;
+        end
+        
+        3'b011: begin//设置大件价格
+          {n5, n6, n7} <= {off, off, off};
+          n8<=2;
+          if (t >= 66000000) begin
+            t <= 0;
+            if (p1) begin  
+              if (n1 != 4'd9) n1 <= n1 + 1;
+              else n1 <= 0;
+            end else n1 <= n1;
+            if (p2) begin
+              if (n2 != 4'd9) n2 <= n2 + 1;
+              else n2 <= 0;
+            end else n2 <= n2;
+          end else t <= t + 1;
+
+          if (m_pos && next1) begin 
+            st <= 3'b100;
+            {b_price[3:0], b_price[7:4], b_price[11:8]} <= {n1, n2, n3};
+            {n1, n2, n3} <= {setfine[3:0], setfine[7:4], setfine[11:8]};
+          end
+          else st <= 3'b011;
+        end
+
+        3'b100: begin//设置超时罚款
+          {n5, n6, n7} <= {off, off, off};
+          n8<=3;
+          if (t >= 66000000) begin
+            t <= 0;
+            if (p1) begin  
+              if (n1 != 4'd9) n1 <= n1 + 1;
+              else n1 <= 0;
+            end else n1 <= n1;
+            if (p2) begin
+              if (n2 != 4'd9) n2 <= n2 + 1;
+              else n2 <= 0;
+            end else n2 <= n2;
+          end else t <= t + 1;
+
+          if (m_pos && next1) begin 
+            st <= 3'b101;
+            {setfine[3:0], setfine[7:4], setfine[11:8]} <= {n1, n2, n3};
+          end
+          else st <= 3'b100;
+        end
+        3'b101: begin//显示收款数
+          {n5, n6, n7} <= {off, off, off};
+          n8<=4;
+          {n1, n2, n3} <= {profit[3:0], profit[7:4], profit[11:8]}
+          if (m_pos && next1) st <= 3'b110;
+          else st <= 3'b101;
+        end
+        3'b110: begin//显示运行时间
+          {n5, n6, n7} <= {off, off, off};
+          n8<=4;
+          {n1, n2, n3} <= {runtime[3:0], runtime[7:4], runtime[11:8]}
+          if (m_pos && next1) begin
+            next<=1;
+          end
+          else st <= 3'b110;
         end
       endcase
     end
@@ -140,4 +196,3 @@ end
 
 
 endmodule
->>>>>>> d25c47f386867feb475f56fd5feeccbfa8d46e3d

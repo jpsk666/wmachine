@@ -6,13 +6,15 @@ module billing (
 
     input [11:0] bal,
     input [1:0] mode,
-    input [11:0] set0,//传入价格
-    input [11:0] set1,
-    input [11:0] set2,
-    input [11:0] set3,
+    input [11:0] set0,//传入甩干价格
+    input [11:0] set1,//小
+    input [11:0] set2,//中
+    input [11:0] set3,//大
     input [11:0]setfine,//空转罚款
-    output wire [7:0] led_r, 
-    output [3:0] ena_r, 
+    output wire [7:0] led_r,  //数码管信号
+    output wire [7:0] led_l,  //数码管信号
+    output [3:0] ena_r,  //数码管使能信号
+    output [3:0] ena_l,  //数码管使能信号
     output reg [7:0] st_light, //接灯
     output reg [7:0] wt_light,//水灯
     output wire buzzer,
@@ -52,6 +54,16 @@ scan4 scanner (
       ena_r,
       led_r
   ); 
+reg [3:0] n5, n6, n7, n8; 
+  scan4 scanner2 (
+      clk,
+      n5,
+      n6,
+      n7,
+      n8,
+      ena_l,
+      led_l
+  );
 
 reg [3:0] nowsign=4'd0;
 reg [11:0] num;
@@ -124,6 +136,7 @@ always @(posedge clk, negedge rst) begin
     else begin
         if(on) begin
             if(st==3'b000)begin
+                {n8,n7,n6,n5}<={4'hc,4'hb,4'hb,4'hb};
                 next<=0;
                 buzzena_r<=1;
                 case(mode)
@@ -170,10 +183,12 @@ always @(posedge clk, negedge rst) begin
                     t<=0;
                     countdown<=8;
                     nowb<={4'd0,bal};
+                    {n0,n3,n2,n1}<={4'd11,bal};
                     st<=3'b001;
                 end
             end
             else if(st==3'b001)begin
+                {n8,n7,n6,n5}<={4'h0,4'hb,4'hb,4'hb};
                 buzzena_r<=0;
                 if(flag==0)begin
                     nowsign<=nowb[15:12];
@@ -185,13 +200,14 @@ always @(posedge clk, negedge rst) begin
                     {n0,n3,n2,n1}<=res;
                     flag<=0;
                 end
-                if(d_pos)begin
+                if(u_pos)begin
                     tt<=0;
                     t<=0;
                     st<=3'b011;
                 end
             end
             else if(st==3'b010) begin
+                {n8,n7,n6,n5}<={4'hc,4'hb,4'hb,4'hb};
                 countdown<=0;
                 if(t>=100000000)begin
                     nowsign<=res[15:12];
@@ -211,6 +227,7 @@ always @(posedge clk, negedge rst) begin
                 end
             end
             else begin
+                {n8,n7,n6,n5}<={4'hc,4'hb,4'hb,4'hb};
                 if(t>=100000000)begin
                     tt<=tt+1;
                     t<=0;
@@ -229,6 +246,11 @@ always @(posedge clk, negedge rst) begin
                 end
                 else begin
                     {n0,n3,n2,n1}<={n,n,n,4'd8};
+                end
+                if(tt>=8||u_pos||m_pos||d_pos)begin
+                    st<=3'b000;
+                    countdown<=8;
+                    next<=1;
                 end
             end
         end

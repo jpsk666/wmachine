@@ -172,3 +172,32 @@ module subtraction(
   assign res={sig,resbcd};
   // assign checkbin=resbin;
 endmodule
+
+module addition(
+    input [11:0] num,//{n1,n2,n3}
+    input [11:0] sub,
+    output [15:0] res
+    // output [9:0] checkbin
+);
+  wire [9:0] numbin,subbin;
+  bcdtobin btb1(num,numbin);
+  bcdtobin btb2(sub,subbin);
+  reg c4,c0;
+  reg [9:0]s;
+  reg [10:0]q;
+  reg [9:0]resbin;
+  always@(*)begin
+    sig=4'd10;
+    q={1'b0,numbin}+{1'b0,subbin};
+    if(q[10]!=1'b0)begin
+      resbin=10'b1111100111;
+    end
+    else begin
+      resbin=numbin+subbin;
+    end
+  end
+  wire [11:0]resbcd;
+  bintobcd btb3(resbin,resbcd);
+  assign res={sig,resbcd};
+  // assign checkbin=resbin;
+endmodule

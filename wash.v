@@ -3,9 +3,11 @@
 module wash (
     input on, clk,rst,
     input [1:0] mode,
-    (* DONT_TOUCH = "1" *) input m_pos,
+    (* DONT_TOUCH = "1" *) input m_pos,u_pos,
     output wire [7:0] led,  //数码管信号
+    output wire [7:0] led_l,
     output [3:0] ena,  //数码管使能信号
+    output [3:0] ena_l,  //左数码管使能信号
     output reg [7:0] st_light, //接灯
     output reg [7:0] wt_light,//水灯
     output reg nxt
@@ -37,6 +39,23 @@ scan4 scanner (
       ena,
       led
   ); 
+
+reg [3:0] n5, n6, n7, n8;  //5~8 从右到左
+scan4 scanner2 (
+      clk,
+      n5,
+      n6,
+      n7,
+      n8,
+      ena_l,
+      led_l
+  );
+reg errflag;
+reg [26:0] errt;
+reg [26:0] errcnt;
+// always @(posedge clk) begin
+    
+// end
 always @(*) begin//状态灯
     case (tpst)
       2'b00: begin//setup
@@ -131,6 +150,7 @@ always @(posedge clk, negedge rst) begin
         tnow<=0;
         tt<=0;
         t<=0;
+        errflag<=0;
         nxt<=0;
         {n1,n2}<={o,n};
         n3<=setn3;
@@ -138,6 +158,29 @@ always @(posedge clk, negedge rst) begin
     end 
     else begin
         if(on) begin
+
+            if(u_pos)begin
+                errt<=0;
+                errcnt<=5;
+                errflag<=1;
+            end
+            if(errt>=50000000)begin
+                errt<=0;
+                errcnt<=errcnt-1;
+            end
+            else begin
+                errt<=errt+1;
+            end
+            if(errcnt<=0)begin
+                errflag<=0;
+            end
+            if(errflag==1&&(errcnt%2==1))begin
+                {n8,n7,n6,n5}<={4'hc,4'hd,4'he,4'he};
+            end
+            else begin
+                {n8,n7,n6,n5}<={4'hc,4'hb,4'hb,4'hb};
+            end
+
             if(tpst!=2'b00)begin
                 if (t >= 100000000) begin //降频到1秒
                     t <= 0;
@@ -165,56 +208,73 @@ always @(posedge clk, negedge rst) begin
             end
 
             if(tpst==2'b00)begin
+                nxt<=0;
+                tnow<=0;
+                case(mode)
+                    2'b00:begin//甩干
+                        settot<=15;
+                        setn0<=4'd1;
+                        setn3<=4'd5;
+                        tcur<=0;
+                    end
+                    2'b01:begin//小
+                        settot<=30;
+                        setn0<=4'd3;
+                        setn3<=4'd0;
+                        setseq<=10;
+                        tcur<=0;
+                    end
+                    2'b10:begin//中
+                        settot<=45;
+                        setn0<=4'd4;
+                        setn3<=4'd5;
+                        setseq<=15;
+                        tcur<=0;
+                    end
+                    2'b11:begin//大
+                        settot<=60;
+                        setn0<=4'd6;
+                        setn3<=4'd0;
+                        setseq<=20;
+                        tcur<=0;
+                    end
+                    default:begin
+                        settot<=60;
+                        setn0<=4'd6;
+                        setn3<=4'd0;
+                        setseq<=20;
+                        tcur<=0;
+                    end
+                endcase
                 if(m_pos)begin
                     case(mode)
                         2'b00:begin//甩干
-                            settot<=15;
-                            setn0<=4'd1;
-                            setn3<=4'd5;
-                            tcur<=0;
                             tpst<=2'b11;//直接进入脱水阶段
                         end
                         2'b01:begin//小
-                            settot<=30;
-                            setn0<=4'd3;
-                            setn3<=4'd0;
-                            setseq<=10;
-                            tcur<=0;
                             tpst<=2'b01;//进入正常洗衣阶段
                         end
                         2'b10:begin//中
-                            settot<=45;
-                            setn0<=4'd4;
-                            setn3<=4'd5;
-                            setseq<=15;
-                            tcur<=0;
                             tpst<=2'b01;
                         end
                         2'b11:begin//大
-                            settot<=60;
-                            setn0<=4'd6;
-                            setn3<=4'd0;
-                            setseq<=20;
-                            tcur<=0;
                             tpst<=2'b01;
                         end
                         default:begin
-                            settot<=60;
-                            setn0<=4'd6;
-                            setn3<=4'd0;
-                            setseq<=20;
-                            tcur<=0;
                             tpst<=2'b01;
                         end
                     endcase
                 end
                 else begin
-                    st<=3'b111;
+                    {n1,n2}<={o,n};
+                    n3<=setn3;
+                    n0<=setn0;  
                 end
             end
             else begin
                 case (tpst)
                     2'b01: begin//main washing
+                        nxt<=0;
                         if(tcur<=setseq)begin
                             if(tt%2==0)begin
                                 n1<=4'd1;
@@ -230,6 +290,7 @@ always @(posedge clk, negedge rst) begin
                         end
                     end
                     2'b10: begin//rinsing
+                        nxt<=0;
                         if(tcur<=setseq)begin
                             if(tt%3==0)begin
                                 n1<=4'd3;
@@ -253,6 +314,7 @@ always @(posedge clk, negedge rst) begin
                     end
                     2'b11: begin//dehydration
                         if(tnow<=settot)begin
+                            nxt<=0;
                             if(tt%4==0)begin
                                 n1<=4'd5;
                             end
@@ -273,8 +335,11 @@ always @(posedge clk, negedge rst) begin
                         else begin
                             tt<=0;
                             tcur<=0;
-                            tpst<=2'b11;
+                            tpst<=2'b00;
+                            tnow<=0;
                             n1<=4'd10;
+                            errflag<=0;
+                            {n5,n6,n7,n8}<={4'hb,4'hb,4'hb,4'hb};
                             nxt<=1;
                         end
                     end
