@@ -1,10 +1,9 @@
 `timescale 1ns / 1ps
 
 module admin(
-    input on,clk,rst,
-    p1,p2,
+    input on,clk,rst,p1,p2,
     (* DONT_TOUCH = "1" *) 
-    input r_pos,m_pos,u_pos,d_pos,//按键
+    input m_pos,u_pos,d_pos,r_pos,//按键
     input [11:0]dy_price_old,
     input [11:0]s_price_old,
     input [11:0]m_price_old,
@@ -13,27 +12,24 @@ module admin(
     input [11:0]runtime,
     input [11:0]profit,
     output wire [7:0] led_r,
-    output [3:0] ena_r,  
+    output wire [3:0] ena_r,  
     output wire [7:0] led_l,  //左数码管信号
-    output [3:0] ena_l,  //左数码管使能信号
+    output wire [3:0] ena_l,  //左数码管使能信号
     output reg [11:0]dy_price_new,
     output reg [11:0]s_price_new,
     output reg [11:0]m_price_new,
     output reg [11:0]b_price_new,
     output reg [11:0]setfine_new,
-    output reg [11:0] new_profit,
-    output reg time_rst,
-    output reg next
+    output next1 //�??关是否关�??
 );
 reg [2:0] st = 3'b111;  
-reg [27:0] t;  //0.66�?
+reg [27:0] t;  //0.66�???
 reg [3:0] n1,n2,n3, n0, n5, n6, n7, n8;
 
 parameter o = 1'b0;
 parameter off = 4'hb;
 parameter true = 1'b1;
 
-wire next1;
 assign next1 = ~(p1 | p2 );
 scan4 scanner (
     clk,
@@ -63,12 +59,7 @@ always @(posedge clk, negedge rst) begin
   end 
   else begin
     if (on) begin
-      if(u_pos) begin //按上键中途�??出管理员模式
-        st<=3'b111;
-      end
-      if(~(p1|p2)&((st==3'b110)||u_pos)) begin
-        next<=1;
-      end
+      if(next1 & (u_pos||r_pos)) st<=3'b000;
       case (st)  
         3'b111:begin
           {n1, n2,n3} <= {dy_price_old[3:0],dy_price_old[7:4],dy_price_old[11:8]};
@@ -77,7 +68,6 @@ always @(posedge clk, negedge rst) begin
           m_price_new<=m_price_old;
           b_price_new<=b_price_old;
           setfine_new<=setfine_old;
-          new_profit<=profit;
           st<=3'b000;
         end
         3'b000: begin//设置甩干价格
@@ -191,11 +181,10 @@ always @(posedge clk, negedge rst) begin
           end
           else st <= 3'b100;
         end
-        3'b101: begin//显示收款�??
+        3'b101: begin//显示收款�????
           {n5, n6, n7} <= {off, off, off};
           n8<=5;
-          {n1, n2, n3} <= {new_profit[3:0], new_profit[7:4], new_profit[11:8]};
-          if(d_pos) new_profit<=0;//重置盈利�?
+          {n1, n2, n3} <= {profit[3:0], profit[7:4], profit[11:8]};
           if (m_pos && next1) st <= 3'b110;
           else st <= 3'b101;
         end
@@ -203,8 +192,6 @@ always @(posedge clk, negedge rst) begin
           {n5, n6, n7} <= {off, off, off};
           n8<=6;
           {n1, n2, n3} <= {runtime[3:0], runtime[7:4], runtime[11:8]};
-          if(d_pos) time_rst<=1;
-          else time_rst<=0;
           if (m_pos && next1) begin
             st<=3'b111;
           end

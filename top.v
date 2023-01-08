@@ -11,7 +11,7 @@ module top (
   output reg [7:0] wt_light, //8个水量灯
   output reg buzzer
 );
-reg [2:0] state; //三大状态
+reg [2:0] state; //三大状�??
 reg [1:0] mode;
 reg [11:0] bal; //余额
 reg [11:0]dy_price_old={4'd0,4'd2,4'd3}; //价格
@@ -19,13 +19,12 @@ reg [11:0]s_price_old={4'd0,4'd4,4'd5};
 reg [11:0]m_price_old={4'd0,4'd6,4'd7};
 reg [11:0]b_price_old={4'd0,4'd8,4'd9};
 reg [11:0]setfine_old={4'd0,4'd2,4'd8}; //超时罚款
-wire time_rst;//时间重置
 reg [11:0]old_runtime;
 reg [11:0]old_profit;
-reg isAdmin; //是否管理员模式
+reg isAdmin; //是否管理员模�?
 
 
-//按钮模块（中上下左右）
+//按钮模块（中上下左右�?
 wire m_pos,u_pos,l_pos,d_pos,r_pos;
 button mid(clk,bt,m_pos);
 button up(clk,u_bt,u_pos);
@@ -44,12 +43,13 @@ addition addition0(
 );
 reg [27:0] t;
 always @(posedge clk) begin
-  if(t>100000000) begin //计时1秒
-      t<=0;
-      if(~time_rst) old_runtime<=new_runtime[11:0];
-      else old_runtime<=0;
+  if(state==3'b010)begin
+    if(t>100000000) begin //计时1�?
+        t<=0;
+        old_runtime<=new_runtime[11:0];
+    end
+    else t<=t + 1;
   end
-  else t<=t + 1;
 end
 
 //盈利累计例化
@@ -62,7 +62,7 @@ addition addition1(
 );
 
 
-//待机显示“stand by”
+//待机显示“stand by�?
 wire [3:0] standby_ena_r;
 wire [7:0] standby_led_r;
 scan4_letter scan4_letter_r(
@@ -78,7 +78,7 @@ scan4_letter scan4_letter_l(
   standby_led_l
 );
 
-//admin模块的例化
+//admin模块的例�?
 reg admin_on;
 wire admin_next;
 wire [11:0] dy_price_new;
@@ -88,11 +88,10 @@ wire [11:0] b_price_new;
 wire [11:0] setfine_new;
 wire [7:0] admin_led_r,admin_led_l;
 wire [3:0] admin_ena_r,admin_ena_l;
-wire [11:0] admin_new_profit;
 admin admin(
   admin_on,clk,rst,
   sw[0],sw[1],
-  r_pos,m_pos,u_pos,d_pos,
+  m_pos,u_pos,r_pos,
   dy_price_old,
   s_price_old,
   m_price_old,
@@ -106,12 +105,10 @@ admin admin(
   m_price_new,
   b_price_new,
   setfine_new,
-  admin_new_profit,
-  time_rst,
   admin_next
 );
 
-//pre模块的例化
+//pre模块的例�?
 reg pre_on;
 wire pre_isOn;
 wire [7:0] pre_led_r,pre_led_l;
@@ -133,7 +130,7 @@ pre pre(
   pre_st_light
 );
 
-//wash模块的例化
+//wash模块的例�?
 reg wash_on;
 wire [7:0] wash_led;
 wire [3:0] wash_ena;
@@ -155,7 +152,7 @@ wash wash(
   wash_next
 );
 
-//billing模块的例化
+//billing模块的例�?
 reg billing_on;
 wire [7:0] billing_led;
 wire [3:0] billing_ena;
@@ -180,6 +177,9 @@ billing billing(
   income
 );
 
+//* * * * * * * * * * * * * * * * 分割�? * * * * * * * * * * * * * * * * *
+
+
 always @(posedge clk, negedge rst) begin
   if (!rst) begin
     pre_on<=0;
@@ -197,13 +197,13 @@ always @(posedge clk, negedge rst) begin
   end
   else begin
     case (state)
-      3'b100:begin //管理员模式
+      3'b100:begin //管理员模�?
         admin_on<=1;
         led_l<=admin_led_l;
         led_r<=admin_led_r;
         ena_l<=admin_ena_l;
         ena_r<=admin_ena_r;
-        if(m_pos & admin_next) begin
+        if(u_pos & admin_next) begin//回到待机模式
           admin_on<=0;
           isAdmin<=0;
           dy_price_old<=dy_price_new;
@@ -211,10 +211,9 @@ always @(posedge clk, negedge rst) begin
           m_price_old<=m_price_new;
           b_price_old<=b_price_new;
           setfine_old<=setfine_new;
-          old_profit<=admin_new_profit;
           state<=3'b000;
         end
-        if(r_pos & admin_next) begin //按右键，带着管理员身份进入下一状态
+        if(r_pos & admin_next) begin //按右键，带着管理员身份进入pre
           admin_on<=0;
           isAdmin<=1;
           dy_price_old<=dy_price_new;
@@ -222,8 +221,11 @@ always @(posedge clk, negedge rst) begin
           m_price_old<=m_price_new;
           b_price_old<=b_price_new;
           setfine_old<=setfine_new;
-          old_profit<=admin_new_profit;
-          state<=3'b000;
+          state<=3'b001;
+        end
+        if(d_pos) begin
+          old_profit<=0;
+          old_runtime<=0;
         end
       end
 
@@ -240,6 +242,10 @@ always @(posedge clk, negedge rst) begin
           ena_r<=standby_ena_r;
        
         if(u_pos) state<=3'b100;//按上键进入管理员模式
+        if(r_pos) begin
+          state<=3'b001;
+          isAdmin<=1;
+        end
         if(m_pos) state<=3'b001;
        
       end
