@@ -19,6 +19,7 @@ reg [11:0]s_price_old={4'd0,4'd4,4'd5};
 reg [11:0]m_price_old={4'd0,4'd6,4'd7};
 reg [11:0]b_price_old={4'd0,4'd8,4'd9};
 reg [11:0]setfine_old={4'd0,4'd2,4'd8}; //超时罚款
+wire time_rst;//时间重置
 reg [11:0]old_runtime;
 reg [11:0]old_profit;
 reg isAdmin; //是否管理员模式
@@ -45,7 +46,8 @@ reg [27:0] t;
 always @(posedge clk) begin
   if(t>100000000) begin //计时1秒
       t<=0;
-      old_runtime<=new_runtime[11:0];
+      if(~time_rst) old_runtime<=new_runtime[11:0];
+      else old_runtime<=0;
   end
   else t<=t + 1;
 end
@@ -60,6 +62,22 @@ addition addition1(
 );
 
 
+//待机显示“stand by”
+wire [3:0] standby_ena_r;
+wire [7:0] standby_led_r;
+scan4_letter scan4_letter_r(
+  clk,4'h6,4'h5,4'hb,4'h4,
+  standby_ena_r,
+  standby_led_r
+);
+wire [3:0] standby_ena_l;
+wire [7:0] standby_led_l;
+scan4_letter scan4_letter_l(
+  clk,4'h3,4'h2,4'h1,4'h0,
+  standby_ena_l,
+  standby_led_l
+);
+
 //admin模块的例化
 reg admin_on;
 wire admin_next;
@@ -70,6 +88,7 @@ wire [11:0] b_price_new;
 wire [11:0] setfine_new;
 wire [7:0] admin_led_r,admin_led_l;
 wire [3:0] admin_ena_r,admin_ena_l;
+wire [11:0] admin_new_profit;
 admin admin(
   admin_on,clk,rst,
   sw[0],sw[1],
@@ -87,6 +106,8 @@ admin admin(
   m_price_new,
   b_price_new,
   setfine_new,
+  admin_new_profit,
+  time_rst,
   admin_next
 );
 
@@ -105,8 +126,8 @@ pre pre(
   pre_isOn,
   pre_led_r,
   pre_ena_r,
-    pre_led_l,
-    pre_ena_l,
+  pre_led_l,
+  pre_ena_l,
   pre_bal,
   pre_mode,
   pre_st_light
@@ -176,7 +197,7 @@ always @(posedge clk, negedge rst) begin
   end
   else begin
     case (state)
-      3'b100:begin
+      3'b100:begin //管理员模式
         admin_on<=1;
         led_l<=admin_led_l;
         led_r<=admin_led_r;
@@ -184,27 +205,39 @@ always @(posedge clk, negedge rst) begin
         ena_r<=admin_ena_r;
         if(m_pos & admin_next) begin
           admin_on<=0;
+          isAdmin<=0;
           dy_price_old<=dy_price_new;
           s_price_old<=s_price_new;
           m_price_old<=m_price_new;
           b_price_old<=b_price_new;
           setfine_old<=setfine_new;
+          old_profit<=admin_new_profit;
+          state<=3'b000;
+        end
+        if(r_pos & admin_next) begin //按右键，带着管理员身份进入下一状态
+          admin_on<=0;
+          isAdmin<=1;
+          dy_price_old<=dy_price_new;
+          s_price_old<=s_price_new;
+          m_price_old<=m_price_new;
+          b_price_old<=b_price_new;
+          setfine_old<=setfine_new;
+          old_profit<=admin_new_profit;
           state<=3'b000;
         end
       end
 
       3'b000: begin //待机阶段
-
           pre_on<=0;
           wash_on<=0;
           billing_on<=0;
           st_light<=8'b00000000;
           bal<=12'b000000000000;
           mode<=2'b00;
-          led_l<=8'b10101010;//待机显示花样
-          led_r<=8'b10101010;
-          ena_l<=4'b1111;
-          ena_r<=4'b1111;
+          led_l<=standby_led_l;//待机显示花样
+          led_r<=standby_led_r;
+          ena_l<=standby_ena_l;
+          ena_r<=standby_ena_r;
        
         if(u_pos) state<=3'b100;//按上键进入管理员模式
         if(m_pos) state<=3'b001;
